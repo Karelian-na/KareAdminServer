@@ -1,0 +1,22 @@
+{
+	"host": "kas.karelian.cn:800",
+	"log": true,
+	"traceFields": ["User-Agent"],
+	"storageMode": "Local",
+	"localStorageConfig": {
+		"tempPath": "./data/temp",
+		"commonFilePath": "./data/files",
+		"resourceCategoriesPathMap": {
+			"image": "./data/images"
+		},
+		"resourceCategoriesUriPrefixMap": {
+			"image": "images"
+		},
+		"publicUriPrefix": "http://kas.karelian.cn:800/resources/",
+		"avatarUriPrefix": "http://kas.karelian.cn:800/resources/images",
+		"publicResourcesPathMap": {
+			"/files/**": "./data/files/",
+			"/images/**": "./data/images/"
+		}
+	}
+}

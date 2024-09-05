@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.karelian.kas.mappers.MenusMapper">
+	<sql id="authorizedPids">
+		SELECT DISTINCT mid
+		FROM user_role_assoc
+		JOIN role_perm_assoc ON user_role_assoc.rid = role_perm_assoc.rid
+		WHERE
+			user_role_assoc.uid = #{uid} AND NOT EXISTS (
+				SELECT *
+				FROM user_perm_assoc
+				WHERE
+					user_perm_assoc.uid = #{uid} AND 
+					authorize = 0 AND 
+					user_perm_assoc.mid = role_perm_assoc.mid
+			)
+		UNION 
+			SELECT mid
+			FROM user_perm_assoc
+			WHERE 
+				user_perm_assoc.uid = #{uid} AND 
+				authorize = 1
+	</sql>
+
+	<select id="getAuthorizedOperationPermissions" resultType="cn.karelian.kas.utils.OperButton" parameterType="cn.karelian.kas.views.MenusView">
+		SELECT icon, name As title, url As action, oper_type
+		FROM (
+			<include refid="authorizedPids"></include>
+		) AS temp
+		LEFT JOIN menus_view ON temp.mid = menus_view.id
+		WHERE 
+			type = 4 AND
+			oper_type is not null AND
+			status = 1 AND
+			(menus_view.pid = #{menu.id} OR 
+			menus_view.pid = #{menu.pid})
+	</select>
+</mapper>

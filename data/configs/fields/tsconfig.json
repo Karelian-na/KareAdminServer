@@ -1,0 +1,20 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "module": "ES2022",
+        "target": "ES2022",
+        "noEmit": true,
+        "checkJs": true,
+        "resolveJsonModule": true,
+        "paths": {
+            "/configs/fields/common.js": [
+                "common"
+            ],
+        }
+    },
+    "include": [
+        "./**/*.js",
+        "./**/*.ts",
+        "./**/*.d.ts",
+    ]
+}

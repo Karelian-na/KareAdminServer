@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.karelian.kas.mappers.UserRoleAssocMapper">
+    <insert id="insertBatchByUnionKey" parameterType="java.util.Map">
+		INSERT INTO user_role_assoc
+		VALUES
+		<foreach item="rid" index="index" collection="rids" separator=",">
+			<foreach item="uid" index="index" collection="uids" separator=",">
+				(#{uid}, #{rid})
+			</foreach>
+		</foreach>
+	</insert>
+</mapper>
