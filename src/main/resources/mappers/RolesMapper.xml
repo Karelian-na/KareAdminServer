@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.karelian.kas.mappers.RolesMapper">
+	<select id="getUserAssociatedAuthorizedMenus" resultType="cn.karelian.kas.views.MenusView">
+		SELECT DISTINCT menus.id AS id, name, menus.pid AS pid, type
+		FROM role_perm_assoc
+		RIGHT JOIN menus ON role_perm_assoc.mid = menus.id
+		WHERE EXISTS (
+			SELECT *
+			FROM user_role_assoc
+			WHERE user_role_assoc.uid = #{uid} AND user_role_assoc.rid = role_perm_assoc.rid
+		)
+		ORDER BY pid ASC, type ASC
+	</select>
+	
+	<select id="getUserAssocRolesForMap" resultType="cn.karelian.kas.entities.Roles">
+		SELECT 
+			roles.id
+			, roles.name
+			, roles.level
+		FROM roles
+		<if test="uid != 999999">
+			RIGHT JOIN user_role_assoc ON user_role_assoc.rid = roles.id
+			<where>
+				and user_role_assoc.uid = #{uid}
+			</where>
+		</if>
+	</select>
+</mapper>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.karelian.kas.mappers.UsersMapper">
+	<select id="getAuthorizedMenuIds" resultType="java.lang.Integer">
+		SELECT id
+		FROM (
+			<include refid="cn.karelian.kas.mappers.MenusMapper.authorizedPids"></include>
+		) AS temp
+		LEFT JOIN menus_view ON temp.mid = menus_view.id
+		WHERE
+			status = 1
+		ORDER BY pid ASC, type ASC
+	</select>
+
+	<select id="getAuthorizedMenusWithoutInfo" resultType="cn.karelian.kas.views.MenusView">
+		SELECT id, name, pid, type
+		FROM (
+			<include refid="cn.karelian.kas.mappers.MenusMapper.authorizedPids"></include>
+		) AS temp
+		LEFT JOIN menus_view ON temp.mid = menus_view.id
+		WHERE
+			status = 1
+		ORDER BY pid ASC, type ASC
+	</select>
+
+	<select id="getAuthorizedMenus" resultType="cn.karelian.kas.views.MenusView">
+		SELECT DISTINCT
+			m1.id AS id, 
+			m1.name AS name, 
+			m1.pid AS pid, 
+			(CASE WHEN m1.url IS NOT NULL THEN 
+				m1.url
+			WHEN m2.url IS NOT NULL THEN
+				m2.url
+			WHEN m1.type != 1 THEN
+				"/404"
+			ELSE
+				null
+			END) AS url, 
+			m1.type AS type, 
+			m1.icon AS icon
+		FROM (
+			<include refid="cn.karelian.kas.mappers.MenusMapper.authorizedPids"></include>
+		) AS temp
+		LEFT JOIN menus_view AS m1 ON temp.mid = m1.id
+		LEFT JOIN menus_view AS m2 ON m1.ref_id = m2.id
+		WHERE
+			m1.status = 1 AND 
+			m1.type &lt;= 3
+		ORDER BY m1.pid ASC, m1.type ASC
+	</select>
+</mapper>
