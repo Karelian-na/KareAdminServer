@@ -19,7 +19,7 @@
 			, roles.name
 			, roles.level
 		FROM roles
-		<if test="uid != 999999">
+		<if test="uid != (@cn.karelian.kas.KasApplication@superAdminId)">
 			RIGHT JOIN user_role_assoc ON user_role_assoc.rid = roles.id
 			<where>
 				and user_role_assoc.uid = #{uid}

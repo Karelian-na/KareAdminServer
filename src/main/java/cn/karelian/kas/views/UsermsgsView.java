@@ -2,8 +2,10 @@ package cn.karelian.kas.views;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 
+import cn.karelian.kas.KasApplication;
 import cn.karelian.kas.annotations.ComparableValidate;
 import cn.karelian.kas.annotations.StringValidate;
+import cn.karelian.kas.utils.Constants;
 import cn.karelian.kas.utils.NonEmptyStrategy;
 
 import java.io.Serializable;
@@ -29,11 +31,13 @@ public class UsermsgsView implements Serializable {
 	/**
 	 * 用户名
 	 */
+	@StringValidate(regex = KasApplication.userUIdRegex)
 	private String uid;
 
 	/**
 	 * ID
 	 */
+	@StringValidate(regex = KasApplication.userIdRegex)
 	private Long id;
 
 	/**
@@ -63,13 +67,13 @@ public class UsermsgsView implements Serializable {
 	/**
 	 * 电子邮箱
 	 */
-	@StringValidate(regex = "^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$")
+	@StringValidate(regex = Constants.emailRegex)
 	private String email;
 
 	/**
 	 * 联系方式
 	 */
-	@StringValidate(regex = "^(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\\d{8}$")
+	@StringValidate(regex = Constants.phoneRegex)
 	private String phone;
 
 	/**

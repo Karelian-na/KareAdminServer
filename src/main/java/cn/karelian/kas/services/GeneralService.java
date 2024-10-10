@@ -30,6 +30,7 @@ import cn.karelian.kas.dtos.LoginParam;
 import cn.karelian.kas.entities.Users;
 import cn.karelian.kas.exceptions.NullRequestException;
 import cn.karelian.kas.services.interfaces.IGeneralService;
+import cn.karelian.kas.utils.Constants;
 import cn.karelian.kas.utils.HttpUtil;
 import cn.karelian.kas.utils.LoginInfomationUtil;
 import cn.karelian.kas.views.MenusView;
@@ -55,19 +56,19 @@ public class GeneralService implements IGeneralService {
 		LambdaQueryChainWrapper<Users> lqcw = usersService.lambdaQuery()
 				.select(Users::getId, Users::getPwd);
 		// 使用用户id登录
-		if (params.account.matches("^\\d{6}$")) {
+		if (params.account.matches(KasApplication.userIdRegex)) {
 			lqcw.eq(Users::getId, params.account);
 
 			// 使用用户名登录
-		} else if (params.account.matches("^\\w{6,20}$")) {
+		} else if (params.account.matches(KasApplication.userUIdRegex)) {
 			lqcw.eq(Users::getUid, params.account);
 
 			// 使用邮箱登录
-		} else if (params.account.matches("^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$")) {
+		} else if (params.account.matches(Constants.emailRegex)) {
 			lqcw.eq(Users::getBind_email, params.account);
 
 			// 使用手机号登录
-		} else if (params.account.matches("^(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\\d{8}$")) {
+		} else if (params.account.matches(Constants.phoneRegex)) {
 			lqcw.eq(Users::getBind_phone, params.account);
 
 		} else {

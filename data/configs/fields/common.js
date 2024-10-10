@@ -18,6 +18,10 @@ const UnShowField = function () {
 
 const statics = {
 	user: {
+		idPattern: "^[1-9]\\d{7}$",
+		errorIdTip: "用户ID必须为不为0开头的8位数字",
+		uidPattern: "^[a-zA-Z]\\w{5,20}$",
+		errorUidPattern: "用户名必须满足^[a-zA-Z]\\w{5,20}$",
 		politicalStatus: [
 			{ value: 1, label: "中共党员" },
 			{ value: 2, label: "中共预备党员" },

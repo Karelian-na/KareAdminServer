@@ -5,12 +5,26 @@ const users = {
 	id: {
 		layoutSpan: 12,
 		type: "text",
-		rule: __COMMON_FIELDS_CONFIGS__.requiredRule,
+		rule: [
+			__COMMON_FIELDS_CONFIGS__.requiredRule,
+			{
+				pattern: __COMMON_FIELDS_CONFIGS__.statics.user.idPattern,
+				trigger: "blur",
+				message: __COMMON_FIELDS_CONFIGS__.statics.user.errorIdTip,
+			},
+		],
 	},
 	uid: {
 		layoutSpan: 12,
 		type: "text",
-		rule: __COMMON_FIELDS_CONFIGS__.requiredRule,
+		rule: [
+			__COMMON_FIELDS_CONFIGS__.requiredRule,
+			{
+				pattern: __COMMON_FIELDS_CONFIGS__.statics.user.uidPattern,
+				trigger: "blur",
+				message: __COMMON_FIELDS_CONFIGS__.statics.user.errorUidPattern,
+			},
+		],
 	},
 
 	name: {
@@ -19,6 +33,7 @@ const users = {
 		rule: __COMMON_FIELDS_CONFIGS__.requiredRule,
 		columnBindProps: {
 			showOverflowTooltip: false,
+			align: "left",
 		},
 	},
 
@@ -96,9 +111,4 @@ const specialFieldsConfig = {
 /**
  * @type FieldsConfig
  */
-export default Object.assign(
-	{},
-	users,
-	specialFieldsConfig,
-	__COMMON_FIELDS_CONFIGS__.recordableFieldsConfig
-);
+export default Object.assign({}, users, specialFieldsConfig, __COMMON_FIELDS_CONFIGS__.recordableFieldsConfig);

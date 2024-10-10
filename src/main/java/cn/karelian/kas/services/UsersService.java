@@ -134,7 +134,7 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
 		QueryWrapper<UsermsgsView> qw = Wrappers.query();
 		qw.ne("id", LoginInfomationUtil.getUserId())
-				.ne("id", 999999);
+				.ne("id", KasApplication.superAdminId);
 		return super.index(params, qw);
 	}
 
@@ -213,7 +213,7 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 		Long loginedId = LoginInfomationUtil.getUserId();
 		if (params.id.equals(loginedId)) {
 			return Result.fieldError("params.id", "不能授权自己!");
-		} else if (params.id.equals(999999L)) {
+		} else if (params.id.equals(KasApplication.superAdminId)) {
 			return Result.fieldError("params.id", "不能授权该用户!");
 		}
 
@@ -377,7 +377,7 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 		Long loginedId = LoginInfomationUtil.getUserId();
 		if (id.equals(loginedId)) {
 			return Result.fieldError("id", "不能授权自己!");
-		} else if (id.equals(999999L)) {
+		} else if (id.equals(KasApplication.superAdminId)) {
 			return Result.fieldError("id", "不能授权该用户!");
 		}
 
