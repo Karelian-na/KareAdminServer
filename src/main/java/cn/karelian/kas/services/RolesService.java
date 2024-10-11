@@ -3,11 +3,18 @@ package cn.karelian.kas.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+
+import cn.karelian.kas.KasApplication;
 import cn.karelian.kas.Result;
 import cn.karelian.kas.codes.FieldErrors;
 import cn.karelian.kas.dtos.AuthorizeParam;
+import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.entities.Roles;
+import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.exceptions.TransactionFailedException;
 import cn.karelian.kas.mappers.RolePermAssocMapper;
 import cn.karelian.kas.mappers.RolesMapper;
@@ -28,37 +35,30 @@ public class RolesService extends KasService<RolesMapper, Roles, Roles> implemen
 	@Autowired
 	private RolePermAssocMapper rolePermAssocMapper;
 
-	private Result checkFields(Roles role, boolean add) {
-		FieldErrors err = EntityUtil.CheckStringField(role.getName(), 1, 20, add);
-		if (err != null) {
-			return Result.fieldError("name", err);
-		}
-
-		err = EntityUtil.CheckNumberField(role.getLevel(), (byte) 2, (byte) 100, add);
-		if (err != null) {
-			return Result.fieldError("level", err);
-		}
-
-		err = EntityUtil.CheckStringField(role.getDescrip(), 0, 100, false);
-		if (err != null) {
-			return Result.fieldError("descrip", err);
-		}
-
-		return null;
+	@Override
+	public Result index(IndexParam params)
+			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
+		Long uid = LoginInfomationUtil.getUserId();
+		var lqw = Wrappers.lambdaQuery(Roles.class).gt(Roles::getLevel, baseMapper.getUserAssocRolesTopLevel(uid));
+		Result result = super.index(params, lqw);
+		return result;
 	}
 
 	@Override
 	public Result add(Roles role) {
-		Result result = this.checkFields(role, true);
-		if (result != null) {
+		Result result = new Result();
+
+		Long uid = LoginInfomationUtil.getUserId();
+		Byte currentUsersRoleTopLevel = baseMapper.getUserAssocRolesTopLevel(uid);
+
+		if (role.getLevel() <= currentUsersRoleTopLevel) {
+			result.setMsg("无法添加比自己角色级别更高的角色！");
 			return result;
 		}
 
-		role.setUpdate_time(null);
-
-		result = new Result(super.save(role));
+		result.setSuccess(super.save(role));
 		if (result.isSuccess()) {
-			result.setData(EntityUtil.ToMap(role));
+			result.setData(role);
 		}
 
 		return result;
@@ -66,23 +66,22 @@ public class RolesService extends KasService<RolesMapper, Roles, Roles> implemen
 
 	@Override
 	public Result edit(Roles role) {
-		if (role.getId() == null) {
-			return Result.fieldError("id", FieldErrors.EMPTY);
-		}
+		Result result = new Result();
 
-		Result result = this.checkFields(role, false);
-		if (result != null) {
+		Roles targetRole = this.lambdaQuery().select(Roles::getId, Roles::getLevel).eq(Roles::getId, role.getId())
+				.one();
+		if (null == targetRole) {
+			result.setMsg("角色不存在!");
 			return result;
 		}
 
-		result = new Result();
-		if (role.getId() <= 4 && (role.getName() != null || role.getLevel() != null)) {
-			result.setMsg("不能修改给定字段!");
+		Byte level = ObjectUtils.isEmpty(role.getLevel()) ? targetRole.getLevel() : role.getLevel();
+		Long uid = LoginInfomationUtil.getUserId();
+		Byte currentUsersRoleTopLevel = baseMapper.getUserAssocRolesTopLevel(uid);
+		if (level <= currentUsersRoleTopLevel) {
+			result.setMsg("无法提升该角色级别！");
 			return result;
 		}
-
-		role.setAdd_time(null);
-		role.setAdd_user(null);
 
 		result.setSuccess(super.updateById(role));
 		if (result.isSuccess()) {
@@ -94,20 +93,27 @@ public class RolesService extends KasService<RolesMapper, Roles, Roles> implemen
 	@Override
 	public Result authorizeindex(Integer id, Boolean all) {
 		Result result = new Result();
-		if (id == 1) {
+		if (id == KasApplication.superAdminRoleId || id == KasApplication.commonUserRoleId) {
 			result.setMsg("不能授权此角色!");
 			return result;
 		}
 
-		if (!super.lambdaQuery().eq(Roles::getId, id).exists()) {
+		Roles targetRole = this.lambdaQuery().select(Roles::getLevel).eq(Roles::getId, id).one();
+		if (null == targetRole) {
 			result.setMsg("角色不存在!");
+			return result;
+		}
+
+		Long uid = LoginInfomationUtil.getUserId();
+		Byte topRoleLevel = baseMapper.getUserAssocRolesTopLevel(uid);
+		if (null != targetRole.getLevel() && targetRole.getLevel() <= topRoleLevel) {
+			result.setMsg("无法授权比自己角色级别更高的角色！");
 			return result;
 		}
 
 		AuthorizeData authorizeData = new AuthorizeData();
 		authorizeData.auth = baseMapper.getAuthorizedMenuIds(id);
 		if (all) {
-			Long uid = LoginInfomationUtil.getUserId();
 			authorizeData.all = baseMapper.getUserAssociatedAuthorizedMenus(uid);
 		}
 
@@ -117,16 +123,29 @@ public class RolesService extends KasService<RolesMapper, Roles, Roles> implemen
 	@Override
 	@Transactional(rollbackFor = TransactionFailedException.class)
 	public Result authorize(AuthorizeParam params) throws TransactionFailedException {
-		FieldErrors err = EntityUtil.CheckNumberField(params.id, 2L, 255L, true);
-		if (err != null) {
-			return Result.fieldError("id", err);
+		Result result = new Result();
+		if (params.id == KasApplication.superAdminRoleId || params.id == KasApplication.commonUserRoleId) {
+			result.setMsg("无法授权该角色!");
+			return result;
+		}
+
+		Roles targetRole = this.lambdaQuery().select(Roles::getLevel).eq(Roles::getId, params.id).one();
+		if (null == targetRole) {
+			result.setMsg("角色不存在!");
+			return result;
+		}
+
+		Long uid = LoginInfomationUtil.getUserId();
+		Byte topRoleLevel = baseMapper.getUserAssocRolesTopLevel(uid);
+		if (null != targetRole.getLevel() && targetRole.getLevel() <= topRoleLevel) {
+			result.setMsg("无法授权比自己角色级别更高的角色！");
+			return result;
 		}
 
 		if (params.auths.size() == 0) {
 			return Result.fieldError("auths", FieldErrors.EMPTY);
 		}
 
-		Result result = new Result();
 		for (Integer pid : params.auths.keySet()) {
 			Byte auth = params.auths.get(pid);
 			switch (auth) {
@@ -150,13 +169,15 @@ public class RolesService extends KasService<RolesMapper, Roles, Roles> implemen
 	}
 
 	@Override
-	public Result delete(Integer id) {
+	public Result delete(Byte id) {
 		Result result = new Result();
-		if (id <= 2) {
+		if (id == KasApplication.superAdminRoleId || id == KasApplication.adminRoleId
+				|| id == KasApplication.commonUserRoleId) {
 			result.setMsg("不能删除该角色!");
 			return result;
 		}
 
-		return new Result(super.removeById(id));
+		result.setSuccess(super.removeById(id));
+		return result;
 	}
 }

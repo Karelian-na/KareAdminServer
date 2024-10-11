@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import cn.karelian.kas.Result;
 import cn.karelian.kas.annotations.Authorize;
+import cn.karelian.kas.annotations.Validate;
 import cn.karelian.kas.dtos.AuthorizeParam;
 import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.entities.Roles;
@@ -20,6 +21,7 @@ import cn.karelian.kas.exceptions.NullRequestException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.exceptions.TransactionFailedException;
 import cn.karelian.kas.services.RolesService;
+import cn.karelian.kas.utils.NonEmptyStrategy;
 
 /**
  * <p>
@@ -57,7 +59,7 @@ public class RolesController {
 
 	@Authorize
 	@PostMapping("/add")
-	public Result add(@RequestBody Roles role) {
+	public Result add(@Validate(nonEmptyStrategy = NonEmptyStrategy.ADD) @RequestBody Roles role) {
 		return rolesService.add(role);
 	}
 
@@ -69,7 +71,7 @@ public class RolesController {
 
 	@Authorize
 	@DeleteMapping("/delete")
-	public Result delete(@RequestParam Integer id) {
+	public Result delete(@RequestParam Byte id) {
 		return rolesService.delete(id);
 	}
 }

@@ -16,8 +16,8 @@ const specialFieldsConfig = {
 			__COMMON_FIELDS_CONFIGS__.requiredRule,
 			{
 				validator(rule, value, callback, source, options) {
-					if (value < 2 || value > 100) {
-						callback("角色等级只能介于2-100之间!");
+					if (value < 3 || value > 126) {
+						callback("角色等级只能介于3-126之间!");
 						return;
 					}
 					callback();

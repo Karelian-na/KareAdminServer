@@ -26,4 +26,14 @@
 			</where>
 		</if>
 	</select>
+
+	<!-- getUserAssocRolesTopLevel --> 
+
+	<select id="getUserAssocRolesTopLevel" resultType="Byte">
+		SELECT 
+			MIN(level)
+		FROM roles
+		RIGHT JOIN user_role_assoc ON user_role_assoc.rid = roles.id
+		WHERE uid = #{uid}
+	</select>
 </mapper>

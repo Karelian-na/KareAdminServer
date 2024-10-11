@@ -5,6 +5,11 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
+
+import cn.karelian.kas.annotations.ComparableValidate;
+import cn.karelian.kas.annotations.StringValidate;
+import cn.karelian.kas.utils.NonEmptyStrategy;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -33,6 +38,7 @@ public class Roles implements Serializable {
 	/**
 	 * 角色名称
 	 */
+	@StringValidate(nonEmptyStrategy = NonEmptyStrategy.ADD, minLen = 1, maxLen = 20)
 	private String name;
 
 	/**
@@ -44,6 +50,7 @@ public class Roles implements Serializable {
 	/**
 	 * 角色级别
 	 */
+	@ComparableValidate(nonEmptyStrategy = NonEmptyStrategy.ADD, min = 3, max = 126)
 	private Byte level;
 
 	/**
@@ -61,6 +68,7 @@ public class Roles implements Serializable {
 	/**
 	 * 备注
 	 */
+	@StringValidate(maxLen = 100)
 	private String descrip;
 
 	/**

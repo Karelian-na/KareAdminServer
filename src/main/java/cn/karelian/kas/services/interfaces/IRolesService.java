@@ -22,5 +22,5 @@ public interface IRolesService extends IKasService<Roles, Roles> {
 
 	public Result authorize(AuthorizeParam params) throws TransactionFailedException;
 
-	public Result delete(Integer id);
+	public Result delete(Byte id);
 }

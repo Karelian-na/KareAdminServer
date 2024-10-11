@@ -28,4 +28,12 @@ public interface RolesMapper extends KasMapper<Roles, Roles> {
 	 * @return
 	 */
 	public List<Roles> getUserAssocRolesForMap(Long uid);
+
+	/**
+	 * get specify user's max associated roles' max level
+	 * 
+	 * @param uid the user id
+	 * @return
+	 */
+	public Byte getUserAssocRolesTopLevel(Long uid);
 }

@@ -28,8 +28,14 @@ import cn.karelian.kas.views.Views;
 public class KasApplication {
 	public static final Path currentPath;
 
-	public static final Long superAdminId = 999999L;
-	public static final String userIdRegex = "^(?:[1-9]\\d{7})|999999$";
+	public static final long superAdminId = 999999L;
+
+	// internal roles
+	public static final int superAdminRoleId = 1;
+	public static final int adminRoleId = 2;
+	public static final int commonUserRoleId = 9;
+
+	public static final String userIdRegex = "^(?:[1-9]\\d{7})|" + superAdminId + "$";
 	public static final String userUIdRegex = "^[a-zA-Z]\\w{5,20}$";
 
 	public static KasConfig configs;

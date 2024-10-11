@@ -149,7 +149,7 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 		if (params.one) {
 			return new Result(true, mapper.selectViewOne(qw));
 		} else {
-			Long nTotal = mapper.selectViewCount(null);
+			Long nTotal = mapper.selectViewCount(qw);
 			PageData<V> pageData = new PageData<>();
 			pageData.totalCount = nTotal;
 

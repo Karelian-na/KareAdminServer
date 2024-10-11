@@ -191,7 +191,7 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 	
 	INSERT INTO roles(id, name, level) VALUES(1, '超级管理员', 1);
 	INSERT INTO roles(id, name, level) VALUES(2, '管理员', 2);
-	INSERT INTO roles(id, name, level) VALUES(9, '用户', 255);
+	INSERT INTO roles(id, name, level) VALUES(9, '用户', 127);
 
 -- 用户角色关联表
 	DROP TABLE IF EXISTS user_role_assoc;
