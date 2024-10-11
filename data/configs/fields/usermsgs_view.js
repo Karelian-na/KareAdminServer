@@ -78,6 +78,9 @@ const specialFieldsConfig = {
 		layoutSpan: 12,
 		type: "text",
 		rule: __COMMON_FIELDS_CONFIGS__.requiredRule,
+		itemBindProps: {
+			label: "角色:"
+		}
 	},
 
 	political_status: {
