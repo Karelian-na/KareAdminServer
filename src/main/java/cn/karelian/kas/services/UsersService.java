@@ -133,8 +133,12 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 	public Result index(IndexParam params)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
 		QueryWrapper<UsermsgsView> qw = Wrappers.query();
-		qw.ne("id", LoginInfomationUtil.getUserId())
-				.ne("id", KasApplication.superAdminId);
+
+		Long uid = LoginInfomationUtil.getUserId();
+		Byte currentUserTopLevel = rolesMapper.getUserAssocRolesTopLevel(uid);
+
+		qw.notIn("id", LoginInfomationUtil.getUserId(), KasApplication.superAdminId)
+				.gt("max_role_level", currentUserTopLevel);
 		return super.index(params, qw);
 	}
 

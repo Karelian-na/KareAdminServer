@@ -211,6 +211,7 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 			users.uid,
 			usermsgs.*,
 			GROUP_CONCAT(roles.name SEPARATOR ',') 'roles',
+			MIN(roles.level) AS max_role_level,
 			users.add_time,
 			REPLACE(users.bind_email, SUBSTR(users.bind_email, 4, 6), '*****') AS bind_email,
 			REPLACE(users.bind_phone, SUBSTR(users.bind_phone, 4, 4), '****') AS bind_phone

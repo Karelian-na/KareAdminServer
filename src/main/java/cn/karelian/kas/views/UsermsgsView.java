@@ -1,6 +1,7 @@
 package cn.karelian.kas.views;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import cn.karelian.kas.KasApplication;
 import cn.karelian.kas.annotations.ComparableValidate;
@@ -98,6 +99,12 @@ public class UsermsgsView implements Serializable {
 	 * 角色
 	 */
 	private String roles;
+
+	/**
+	 * 最大角色级别
+	 */
+	@JsonIgnore
+	private Byte max_role_level;
 
 	/**
 	 * 注册时间
