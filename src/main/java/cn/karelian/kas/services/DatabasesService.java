@@ -132,41 +132,7 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 
 		// 更新视图
 		ViewsInfo viewInfo = new ViewsInfo();
-		BeanUtils.copyProperties(params, viewInfo, "viewName");
-		do {
-			if (ObjectUtils.isEmpty(params.getFields_config())) {
-				break;
-			}
-
-			String strRelativePath = null;
-			if (ObjectUtils.isEmpty(oldView.getFields_config())) {
-				strRelativePath = "fields/" + params.getView_name() + ".js";
-				viewInfo.setFields_config(strRelativePath);
-			} else {
-				strRelativePath = oldView.getFields_config();
-			}
-			Path fieldConfigPath = KasApplication.currentPath.resolve("data/configs").resolve(strRelativePath);
-
-			if (Files.exists(fieldConfigPath)) {
-				String suffix = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".bak";
-				try {
-					Files.copy(fieldConfigPath, fieldConfigPath.resolve(suffix), StandardCopyOption.REPLACE_EXISTING);
-				} catch (Exception e) {
-					logger.error("Failed to backup the fields config, details" + ExceptionUtil.getMessage(e));
-					result.fail(strRelativePath);
-					throw new TransactionFailedException(result);
-				}
-			}
-
-			try (FileOutputStream fileOutputStream = new FileOutputStream(fieldConfigPath.toFile())) {
-				fileOutputStream.write(params.getFields_config().getBytes("utf-8"));
-				result.setSuccess(true);
-			} catch (Exception e) {
-				logger.error("Failed to write fields config, details: " + ExceptionUtil.getMessage(e));
-				result.fail("更新字段配置失败！");
-				throw new TransactionFailedException(result);
-			}
-		} while (false);
+		BeanUtils.copyProperties(params, viewInfo, "viewName", "fields_config");
 
 		var luw = Wrappers.update((ViewsInfo) null).eq("view_name", params.getView_name());
 		MybatisPlusUtil.applyNonNullUpdateFields(viewInfo, luw);
@@ -229,6 +195,43 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 				}
 			}
 		}
+
+		// 更新字段配置，放在最后，为文件更改
+		do {
+			if (ObjectUtils.isEmpty(params.getFields_config())) {
+				break;
+			}
+
+			String strRelativePath = null;
+			if (ObjectUtils.isEmpty(oldView.getFields_config())) {
+				strRelativePath = "fields/" + params.getView_name() + ".js";
+				viewInfo.setFields_config(strRelativePath);
+			} else {
+				strRelativePath = oldView.getFields_config();
+			}
+			Path fieldConfigPath = KasApplication.currentPath.resolve("data/configs").resolve(strRelativePath);
+
+			if (Files.exists(fieldConfigPath)) {
+				String suffix = "." + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".bak";
+				Path backupFieldsConfigPath = Path.of(fieldConfigPath.toString() + suffix);
+				try {
+					Files.copy(fieldConfigPath, backupFieldsConfigPath, StandardCopyOption.REPLACE_EXISTING);
+				} catch (Exception e) {
+					logger.error("Failed to backup the fields config, details" + ExceptionUtil.getMessage(e));
+					result.fail("备份配置失败，无法完成修改！");
+					throw new TransactionFailedException(result);
+				}
+			}
+
+			try (FileOutputStream fileOutputStream = new FileOutputStream(fieldConfigPath.toFile())) {
+				fileOutputStream.write(params.getFields_config().getBytes("utf-8"));
+				result.setSuccess(true);
+			} catch (Exception e) {
+				logger.error("Failed to write fields config, details: " + ExceptionUtil.getMessage(e));
+				result.fail("更新字段配置失败！");
+				throw new TransactionFailedException(result);
+			}
+		} while (false);
 
 		if (params.fields != null) {
 			tableFieldsInfoService.reloadFieldsConfigs();
