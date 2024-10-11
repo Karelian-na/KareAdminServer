@@ -329,7 +329,8 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 				maxRoleLevelIdx = idx;
 			}
 		}
-		data.put("roles", userAssocRoles.stream().skip(maxRoleLevelIdx).toArray());
+		userAssocRoles.remove(maxRoleLevelIdx);
+		data.put("roles", userAssocRoles);
 
 		Result result = new Result(true, data);
 		return result;
