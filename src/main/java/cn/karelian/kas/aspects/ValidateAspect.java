@@ -154,9 +154,26 @@ public class ValidateAspect {
 			return;
 		}
 
-		String val = String.valueOf(value);
 		var validator = context.validator;
 		var validatingFieldName = context.validatingFieldName;
+		if (descriptor instanceof Field && validator.trim()) {
+			Field field = (Field) descriptor;
+			do {
+				if (!(value instanceof String)) {
+					return;
+				}
+
+				value = ((String) value).trim();
+				try {
+					field.set(argContainer, value);
+				} catch (Exception e) {
+					String msg = "Failed to set field value when validate trimable!";
+					logger.error(msg + " reason: " + e.getMessage());
+					throw new InternalError(msg);
+				}
+			} while (false);
+		}
+		String val = String.valueOf(value);
 
 		// 长度不匹配
 		if ((-1 != validator.len() && val.length() != validator.len())) {

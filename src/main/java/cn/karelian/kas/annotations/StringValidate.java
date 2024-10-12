@@ -36,6 +36,11 @@ public @interface StringValidate {
 	String regex() default "";
 
 	/**
+	 * 校验字符串时是否去除空格，并更新（对象时生效）
+	 */
+	boolean trim() default true;
+
+	/**
 	 * 校验可空性，取自于 {@link NonEmptyStrategy} 的逻辑或组合；
 	 * 与 {@link Validate} 指定的 {@code nonEmptyStrategy}
 	 * 的值进行二进制或运算，如果结果非零则字段不可为空。
