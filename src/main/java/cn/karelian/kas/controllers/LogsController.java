@@ -43,7 +43,7 @@ public class LogsController {
 	}
 
 	@Authorize
-	@DeleteMapping("/delete")
+	@DeleteMapping("/bulkdelete")
 	public Result delete(@RequestParam("ids") List<Integer> ids) {
 		return new Result(logsService.removeBatchByIds(ids));
 	}

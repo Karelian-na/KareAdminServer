@@ -1,5 +1,7 @@
 package cn.karelian.kas.mappers;
 
+import java.util.List;
+
 import cn.karelian.kas.entities.Usermsgs;
 import cn.karelian.kas.views.UsermsgsView;
 
@@ -12,4 +14,5 @@ import cn.karelian.kas.views.UsermsgsView;
  * @since 2023-08-28
  */
 public interface UsermsgsMapper extends KasMapper<Usermsgs, UsermsgsView> {
+	public List<UsermsgsView> getDeletedUsers();
 }

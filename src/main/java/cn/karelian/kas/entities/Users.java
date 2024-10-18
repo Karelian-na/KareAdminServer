@@ -76,4 +76,19 @@ public class Users implements Serializable {
 	 */
 	@TableLogic
 	private Boolean deleted;
+
+	/**
+	 * 删除人
+	 */
+	private String delete_user;
+
+	/**
+	 * 删除时间
+	 */
+	private LocalDateTime delete_time;
+
+	/**
+	 * 删除类型
+	 */
+	private Byte delete_type;
 }

@@ -5,11 +5,14 @@ import java.util.List;
 import cn.karelian.kas.Result;
 import cn.karelian.kas.dtos.AssignRoleParam;
 import cn.karelian.kas.dtos.AuthorizeParam;
+import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.dtos.RevisePasswordParam;
 import cn.karelian.kas.entities.Users;
 import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.exceptions.TransactionFailedException;
 import cn.karelian.kas.exceptions.UnLoginException;
+import cn.karelian.kas.services.UsersService.UserDeleteType;
 import cn.karelian.kas.views.UsermsgsView;
 
 /**
@@ -27,6 +30,8 @@ public interface IUsersService extends IKasService<Users, UsermsgsView> {
 
 	public Result add(UsermsgsView usermsg) throws TransactionFailedException;
 
+	public Result delete(List<Long> ids, UserDeleteType type);
+
 	public Result reset(List<Long> ids);
 
 	public Result authorize(AuthorizeParam params) throws TransactionFailedException;
@@ -40,4 +45,11 @@ public interface IUsersService extends IKasService<Users, UsermsgsView> {
 	public Result asign(AssignRoleParam params) throws NullRequestException, TransactionFailedException;
 
 	public Result getverifies(String account) throws NullRequestException;
+
+	public Result getDeletedUsers(IndexParam param)
+			throws IllegalAccessException, NullRequestException, PermissionNotFoundException;
+
+	public Result restoreDeletedUsers(List<Long> ids);
+
+	public Result deleteUsersPermanently(List<Long> ids);
 }

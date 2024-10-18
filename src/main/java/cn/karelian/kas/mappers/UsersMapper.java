@@ -16,6 +16,30 @@ import cn.karelian.kas.views.UsermsgsView;
  */
 public interface UsersMapper extends KasMapper<Users, UsermsgsView> {
 	/**
+	 * 删除给定用户Id的用户
+	 * 
+	 * @param ids 将要删除的用户的Id
+	 * @return
+	 */
+	public boolean delete(List<Long> ids, int delete_type);
+
+	/**
+	 * 恢复删除/注销的用户
+	 * 
+	 * @param ids 将要恢复的用户的Id
+	 * @return
+	 */
+	public boolean restoreDeletedUsers(List<Long> ids);
+
+	/**
+	 * 持久删除给定的用户（数据库删除）
+	 * 
+	 * @param ids 将要删除的用户的Id
+	 * @return
+	 */
+	public boolean deleteUsersPermanently(List<Long> ids);
+
+	/**
 	 * 获取已授权的菜单Id
 	 * 
 	 * @param uid 将要获取的用户的id
