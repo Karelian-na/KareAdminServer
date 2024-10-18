@@ -92,6 +92,7 @@ public class Menus implements Serializable {
 	/**
 	 * 创建人
 	 */
+	@TableField(fill = FieldFill.INSERT)
 	private Long add_uid;
 
 	/**
