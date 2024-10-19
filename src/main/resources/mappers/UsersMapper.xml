@@ -1,6 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.karelian.kas.mappers.UsersMapper">
+	<select id="getUserWithLogicDelete" resultType="cn.karelian.kas.entities.Users">
+		SELECT
+			<if test="ew != null">${ew.sqlSelect}</if>
+			<if test="ew == null">*</if>
+		FROM users
+		WHERE id = #{id}
+	</select>
+
+	<delete id="delete">
+		UPDATE users
+		SET
+			deleted = 1
+			, delete_time = '${@java.time.LocalDateTime@now()}'
+			, delete_type = #{delete_type}
+			, delete_user = '${@cn.karelian.kas.utils.LoginInfomationUtil@getUserName()}'
+		WHERE id IN (
+			<foreach item="id" collection="ids" separator=",">
+				#{id}
+			</foreach>
+		)
+	</delete>
+
+	<update id="restoreDeletedUsers">
+		UPDATE users
+		SET 
+			deleted = 0
+			, delete_user = NULL
+			, delete_time = NULL
+			, delete_type = NULL
+		WHERE id IN (
+			<foreach item="id" collection="ids" separator=",">
+				#{id}
+			</foreach>
+		)
+	</update>
+
+	<delete id="deleteUsersPermanently">
+		DELETE
+		FROM users
+		WHERE deleted = 1 AND id IN (
+			<foreach item="id" collection="ids" separator=",">
+				#{id}
+			</foreach>
+		)
+	</delete>
+
 	<select id="getAuthorizedMenuIds" resultType="java.lang.Integer">
 		SELECT id
 		FROM (

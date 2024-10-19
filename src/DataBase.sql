@@ -2,15 +2,17 @@ CREATE DATABASE kas;
 
 USE kas;
 
-CREATE USER `kas_user`@`%` IDENTIFIED WITH mysql_native_password BY '123456789';
+CREATE USER IF NOT EXISTS `kas_user`@`%` IDENTIFIED WITH mysql_native_password BY '123456789';
 
 GRANT ALL ON `kas`.* TO `kas_user`@`%`;
+
+FLUSH PRIVILEGES;
 
 -- 用户表
 	DROP TABLE IF EXISTS users;
 	CREATE TABLE users (
 		id BIGINT(12) UNSIGNED PRIMARY KEY COMMENT 'ID',
-		uid VARCHAR(16) UNIQUE DEFAULT NULL COMMENT '用户名',
+		uid VARCHAR(16) UNIQUE NOT NULL COMMENT '用户名',
 		pwd VARCHAR(64) NOT NULL DEFAULT '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92' COMMENT '密码', -- 123456
 		last_login_ip VARCHAR(15) DEFAULT NULL COMMENT '最后登录IP',
 		last_login_time DATETIME DEFAULT NULL COMMENT '最后登录时间',
@@ -18,7 +20,10 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 		bind_email VARCHAR(30) DEFAULT NULL COMMENT '绑定邮箱',
 		bind_phone VARCHAR(11) DEFAULT NULL COMMENT '绑定手机',
 		is_init BOOL NOT NULL DEFAULT FALSE COMMENT '是否初始化'
-		, deleted BOOL NOT NULL DEFAULT 0 COMMENT '是否删除'
+		, deleted BOOL NOT NULL DEFAULT FALSE COMMENT '是否删除'
+		, delete_user VARCHAR(20) DEFAULT NULL COMMENT '删除人'
+		, delete_time DATETIME DEFAULT NULL COMMENT '删除/注销时间'
+		, delete_type TINYINT DEFAULT NULL COMMENT '删除方式' -- 0: 注销 1: 删除
 	) COMMENT '管理用户的表';
 	
 	INSERT INTO users(id, uid) VALUES(999999, 'superadmin');
@@ -40,6 +45,27 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 		FOREIGN KEY(id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
 	) COMMENT '管理用户基本信息的表';
 	
+-- 已删除/注销用户视图
+	CREATE OR REPLACE VIEW deleted_usermsgs_view AS
+		SELECT
+			users.id
+			, users.uid
+			, usermsgs.name
+			, usermsgs.avatar
+			, users.bind_email
+			, users.bind_phone
+			, users.last_login_time
+			, users.add_time
+			, users.delete_user
+			, users.delete_time
+			, users.delete_type
+			, usermsgs.email
+			, usermsgs.phone
+		FROM users
+		LEFT JOIN usermsgs ON users.id = usermsgs.id
+		WHERE users.deleted = 1
+	;
+	
 	INSERT INTO usermsgs(id, name) VALUES(999999, '超级管理员');
 
 -- 视图信息表
@@ -59,6 +85,7 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 	INSERT INTO views_info(view_name, comment, fields_config) VALUES("permissions_view", "权限表", "fields/permissions_view.js");
 	INSERT INTO views_info(view_name, comment, fields_config) VALUES("roles", "角色表", "fields/roles.js");
 	INSERT INTO views_info(view_name, comment, fields_config) VALUES("usermsgs_view", "用户信息表", "fields/usermsgs_view.js");
+	INSERT INTO views_info(view_name, comment, fields_config) VALUES("deleted_usermsgs_view", "已删除/注销的用户信息表", "fields/deleted_usermsgs_view.js");
 	INSERT INTO views_info(view_name, comment, fields_config) VALUES("views", "管理表字段的表", "fields/views.js");
 
 -- 视图信息视图
@@ -149,6 +176,15 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 	INSERT INTO table_fields_info VALUES('permissions_view', 7, 1, 0, 0, 0, 'update_time', NULL);
 	INSERT INTO table_fields_info VALUES('permissions_view', 8, 0, 0, 1, 1, 'descrip', NULL);
 
+	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 0, 1, 1, 0, NULL, 'name', NULL);
+	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 1, 1, 0, 0, NULL, 'delete_time', NULL);
+	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 2, 1, 0, 0, NULL, 'delete_user', NULL);
+	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 3, 1, 0, 0, NULL, 'add_time', NULL);
+	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 4, 1, 0, 0, NULL, 'last_login_time', NULL);
+	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 5, 1, 0, 0, NULL, 'delete_type', NULL);
+	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 6, 1, 0, 0, NULL, 'bind_email', NULL);
+	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 7, 1, 0, 0, NULL, 'bind_phone', NULL);
+
 -- 字段信息视图
 	CREATE OR REPLACE VIEW fields_info_view AS
 		SELECT
@@ -226,7 +262,10 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 	DROP TRIGGER IF EXISTS on_user_insert;
 	CREATE TRIGGER `on_user_insert` AFTER INSERT ON `users` 
 	FOR EACH ROW
-	INSERT INTO user_role_assoc VALUES(NEW.id, 9);
+	BEGIN
+		INSERT INTO user_role_assoc VALUES(NEW.id, 9);
+		INSERT INTO usermsgs(id, name) VALUES(NEW.id, CONCAT('用户', NEW.id));
+	END;
 	
 -- 日志表
 	DROP TABLE IF EXISTS logs;
@@ -240,7 +279,7 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 		ip VARCHAR(15) COMMENT '请求IP',
 		date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '请求时间',
 		
-		FOREIGN KEY(uid) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT
+		FOREIGN KEY(uid) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL
 	);
 
 -- 权限表
@@ -252,11 +291,11 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 		guid VARCHAR(128) NOT NULL COMMENT '唯一标识',
 		descrip VARCHAR(100) DEFAULT NULL COMMENT '备注',
 		oper_type TINYINT UNSIGNED DEFAULT NULL COMMENT '操作方式', -- 仅对type=oper时有效, 1代表只能批量操作, 2代表只能单一操作, 3代表既能批量也能单一操作, 
- 		add_uid BIGINT UNSIGNED NOT NULL DEFAULT 999999 COMMENT '添加人',
+ 		add_uid BIGINT UNSIGNED DEFAULT 999999 COMMENT '添加人',
 		add_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '添加时间',
 		update_time DATETIME ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 		
-		FOREIGN KEY(add_uid) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+		FOREIGN KEY(add_uid) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
 		INDEX(guid)
 	) COMMENT '管理权限的表' AUTO_INCREMENT = 100;
 
@@ -290,14 +329,15 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 		descrip VARCHAR(100) DEFAULT NULL COMMENT '备注',
 		pid SMALLINT UNSIGNED DEFAULT NULL COMMENT '父权限ID',
 		ref_id SMALLINT UNSIGNED DEFAULT NULL COMMENT '引用页面id',
-		add_uid BIGINT UNSIGNED NOT NULL DEFAULT 999999 COMMENT '添加人',
+		add_uid BIGINT UNSIGNED DEFAULT 999999 COMMENT '添加人',
 		add_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '添加时间',
 		update_time DATETIME ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 		
 		UNIQUE(url),
 		FOREIGN KEY(pid) REFERENCES menus(id) ON UPDATE CASCADE ON DELETE CASCADE,
-		FOREIGN KEY(pmid) REFERENCES permissions(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+		FOREIGN KEY(pmid) REFERENCES permissions(id) ON UPDATE CASCADE ON DELETE SET NULL,
 		FOREIGN KEY(ref_id) REFERENCES menus(id) ON UPDATE CASCADE ON DELETE SET NULL
+		, FOREIGN KEY(add_uid) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL
 	) AUTO_INCREMENT = 10000;
 
 -- 菜单视图
@@ -374,18 +414,22 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (24, '授权用户', 'adm_users_authorize', 2);
 	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (25, '赋予用户角色', 'adm_users_assign', 1);
 
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (26, '角色列表', 'adm_roles_index', NULL);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (27, '添加角色', 'adm_roles_add', 1);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (28, '编辑角色', 'adm_roles_edit', 2);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (29, '删除角色', 'adm_roles_delete', 2);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (30, '授权角色', 'adm_roles_authorize', 2);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (26, '删除/注销用户列表', 'adm_users_deleted_index', NULL);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (27, '注销/删除用户恢复', 'adm_users_restore', 3);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (28, '永久删除用户', 'adm_users_delete_permanently', 3);
 
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (31, '数据库列表', 'adm_databases_index', NULL);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (32, '数据库管理', 'adm_databases_edit', 2);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (33, '重载字段配置', 'adm_databases_reload', 1);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (29, '角色列表', 'adm_roles_index', NULL);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (30, '添加角色', 'adm_roles_add', 1);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (31, '编辑角色', 'adm_roles_edit', 2);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (32, '删除角色', 'adm_roles_delete', 2);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (33, '授权角色', 'adm_roles_authorize', 2);
 
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (34, '日志列表', 'adm_logs_index', NULL);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (35, '删除日志', 'adm_logs_delete', 1);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (34, '数据库列表', 'adm_databases_index', NULL);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (35, '数据库管理', 'adm_databases_edit', 2);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (36, '重载字段配置', 'adm_databases_reload', 1);
+
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (37, '日志列表', 'adm_logs_index', NULL);
+	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (38, '删除日志', 'adm_logs_delete', 1);
 
 -- 菜单插入
 	CREATE TRIGGER `on_menu_insert` AFTER INSERT ON `menus` 
@@ -407,31 +451,38 @@ GRANT ALL ON `kas`.* TO `kas_user`@`%`;
 	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1010, 4, 1006, 18, '/permissions/delete', '删除', 'delete');
 	UPDATE menus SET ref_id = 1007 WHERE id = 1006;
 
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1011, 2, 1000, NULL, NULL, '用户管理', 'man_role');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1012, 4, 1011, 19, '/users/index', '列表', 'index');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1013, 4, 1011, 20, '/users/add', '添加', 'add');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1014, 4, 1011, 21, '/users/edit', '编辑', 'edit');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1015, 4, 1011, 22, '/users/delete', '删除', 'delete');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1016, 4, 1011, 23, '/users/reset', '重置密码', 'reset');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1017, 4, 1011, 24, '/users/authorize', '授权', 'authorize');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1018, 4, 1011, 25, '/users/assign', '赋予角色', 'assign');
-	UPDATE menus SET ref_id = 1012 WHERE id = 1011;
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1011, 2, 1000, NULL, NULL, '用户信息', 'man_role');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1012, 3, 1011, NULL, NULL, '用户管理', 'page');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1013, 4, 1012, 19, '/users/index', '列表', 'index');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1014, 4, 1012, 20, '/users/add', '添加', 'add');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1015, 4, 1012, 21, '/users/edit', '编辑', 'edit');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1016, 4, 1012, 22, '/users/delete', '删除', 'delete');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1017, 4, 1012, 23, '/users/reset', '重置密码', 'reset');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1018, 4, 1012, 24, '/users/authorize', '授权', 'authorize');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1019, 4, 1012, 25, '/users/assign', '赋予角色', 'assign');
+	UPDATE menus SET ref_id = 1013 WHERE id = 1011;
+	UPDATE menus SET ref_id = 1013 WHERE id = 1012;
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1020, 3, 1011, NULL, NULL, '删除/注销管理', 'page');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1021, 4, 1020, 26, '/users/admin/deleted/index', '列表', 'index');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1022, 4, 1020, 27, '/users/admin/deleted/restore', '恢复', 'backward');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1023, 4, 1020, 28, '/users/admin/deleted/delete', '永久删除', 'delete');
+	UPDATE menus SET ref_id = 1021 WHERE id = 1020;
 
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1019, 2, 1000, NULL, NULL, '角色管理', 'man_user');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1020, 4, 1019, 26, '/roles/index', '列表', 'index');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1021, 4, 1019, 27, '/roles/add', '添加', 'add');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1022, 4, 1019, 28, '/roles/edit', '编辑', 'edit');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1023, 4, 1019, 29, '/roles/delete', '删除', 'delete');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1024, 4, 1019, 30, '/roles/authorize', '授权', 'authorize');
-	UPDATE menus SET ref_id = 1020 WHERE id = 1019;
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1024, 2, 1000, NULL, NULL, '角色管理', 'man_user');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1025, 4, 1024, 29, '/roles/index', '列表', 'index');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1026, 4, 1024, 30, '/roles/add', '添加', 'add');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1027, 4, 1024, 31, '/roles/edit', '编辑', 'edit');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1028, 4, 1024, 32, '/roles/delete', '删除', 'delete');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1029, 4, 1024, 33, '/roles/authorize', '授权', 'authorize');
+	UPDATE menus SET ref_id = 1025 WHERE id = 1024;
 
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1025, 2, 1000, NULL, NULL, '数据库管理', 'man_database');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1026, 4, 1025, 31, '/databases/index', '列表', 'index');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1027, 4, 1025, 32, '/databases/edit', '管理', 'manage');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1028, 4, 1025, 33, '/databases/configs/fields/reload', '重载字段配置', 'manage');
-	UPDATE menus SET ref_id = 1026 WHERE id = 1025;
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1030, 2, 1000, NULL, NULL, '数据库管理', 'man_database');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1031, 4, 1030, 34, '/databases/index', '列表', 'index');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1032, 4, 1030, 35, '/databases/edit', '管理', 'manage');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1033, 4, 1030, 36, '/databases/configs/fields/reload', '重载字段配置', 'manage');
+	UPDATE menus SET ref_id = 1031 WHERE id = 1030;
 
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1029, 2, 1000, NULL, NULL, '日志管理', 'man_log');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1030, 4, 1029, 34, '/logs/index', '列表', 'index');
-	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1031, 4, 1029, 35, '/logs/delete', '删除', 'delete');
-	UPDATE menus SET ref_id = 1030 WHERE id = 1029;
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1034, 2, 1000, NULL, NULL, '日志管理', 'man_log');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1035, 4, 1034, 37, '/logs/index', '列表', 'index');
+	INSERT INTO `menus`(id, type, pid, pmid, url, name, icon) VALUES(1036, 4, 1034, 38, '/logs/delete', '删除', 'delete');
+	UPDATE menus SET ref_id = 1035 WHERE id = 1034;

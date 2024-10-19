@@ -39,6 +39,7 @@ public class ViewGenerator {
 							// "menus_view",
 							// "fields_info_view",
 							// "usermsgs_view",
+							// "deleted_usermsgs_view",
 							// "permissions_view",
 					});
 				});

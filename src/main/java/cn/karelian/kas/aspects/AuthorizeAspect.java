@@ -46,11 +46,21 @@ public class AuthorizeAspect {
 
 		String url = request.getRequestURI();
 		MenusView menu = menusService.getByUrl(url);
-		if (null == menu) {
-			menu = menusService.getByUrl(url.replaceFirst("(.*)/.*/([a-zA-Z]*)$", "$1/$2"));
-			if (null == menu) {
-				throw new PermissionNotFoundException();
+		while (menu == null) {
+			if (url.endsWith("/bulkdelete")) {
+				url = url.replace("/bulkdelete", "/delete");
 			}
+			menu = menusService.getByUrl(url);
+			if (menu != null) {
+				break;
+			}
+
+			url = url.replaceFirst("(.*)/.*/([a-zA-Z]*)$", "$1/$2");
+			menu = menusService.getByUrl(url);
+			if (null != menu) {
+				break;
+			}
+			throw new PermissionNotFoundException();
 		}
 
 		if (!permissionsService.isAuthorized(menu)) {

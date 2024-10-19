@@ -22,9 +22,11 @@ import cn.karelian.kas.dtos.AuthorizeParam;
 import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.dtos.RevisePasswordParam;
 import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.exceptions.KasException;
 import cn.karelian.kas.exceptions.TransactionFailedException;
 import cn.karelian.kas.services.UsersService;
+import cn.karelian.kas.services.UsersService.UserDeleteType;
 import cn.karelian.kas.utils.NonEmptyStrategy;
 import cn.karelian.kas.views.UsermsgsView;
 
@@ -77,8 +79,14 @@ public class UsersController {
 
 	@Authorize
 	@DeleteMapping("/users/delete")
-	public Result delete(@RequestParam long id) {
-		return new Result(usersService.removeById(id));
+	public Result delete(@RequestParam Long id) {
+		return usersService.delete(List.of(id), UserDeleteType.DELETE);
+	}
+
+	@Authorize
+	@DeleteMapping("/users/bulkdelete")
+	public Result delete(@RequestParam List<Long> ids) {
+		return usersService.delete(ids, UserDeleteType.DELETE);
 	}
 
 	@Authorize
@@ -123,5 +131,30 @@ public class UsersController {
 	@GetMapping("/users/verifies")
 	public Result getverifies(@RequestParam(required = false) String account) throws NullRequestException {
 		return usersService.getverifies(account);
+	}
+
+	@Authorize
+	@GetMapping("/users/admin/deleted/index")
+	public Result deletedindex(@Validate @ModelAttribute IndexParam param)
+			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
+		return usersService.getDeletedUsers(param);
+	}
+
+	@Authorize
+	@PutMapping("/users/admin/deleted/restore")
+	public Result deletedrestore(@RequestBody List<Long> ids) {
+		return usersService.restoreDeletedUsers(ids);
+	}
+
+	@Authorize
+	@DeleteMapping("/users/admin/deleted/delete")
+	public Result deletepermanently(@RequestParam Long id) {
+		return usersService.deleteUsersPermanently(List.of(id));
+	}
+
+	@Authorize
+	@DeleteMapping("/users/admin/deleted/bulkdelete")
+	public Result deletepermanently(@RequestParam List<Long> ids) {
+		return usersService.deleteUsersPermanently(ids);
 	}
 }

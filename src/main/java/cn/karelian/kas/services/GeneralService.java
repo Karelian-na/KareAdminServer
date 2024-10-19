@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -126,17 +125,29 @@ public class GeneralService implements IGeneralService {
 	public Result index() throws NullRequestException {
 		HttpServletRequest request = HttpUtil.getRequest();
 		request.changeSessionId();
-		Long uid = (Long) request.getSession().getAttribute("id");
+		Long uid = LoginInfomationUtil.getUserId();
 
-		IndexInfo info = new IndexInfo();
-		info.menus = usersService.getBaseMapper().getAuthorizedMenus(uid);
+		Result result = new Result();
 
 		LambdaQueryWrapper<UsermsgsView> lqw = new LambdaQueryWrapper<>();
 		lqw.select(UsermsgsView::getName, UsermsgsView::getAvatar);
 		lqw.eq(UsermsgsView::getId, uid);
-		info.userMsg = usersService.listViewMaps(lqw).get(0);
 
-		Result result = new Result();
+		UsermsgsView usermsg = usersService.getViewOne(lqw);
+		if (usermsg == null) {
+			try {
+				HttpSession session = LoginInfomationUtil.getSession();
+				session.invalidate();
+			} catch (Exception e) {
+			}
+			result.setMsg("请求用户不存在！");
+			return result;
+		}
+
+		IndexInfo info = new IndexInfo();
+		info.userMsg = usermsg;
+		info.menus = usersService.getBaseMapper().getAuthorizedMenus(uid);
+
 		Path commonFieldsConfigPath = KasApplication.currentPath.resolve("data/configs/fields/common.js");
 		try (FileInputStream fileInputStream = new FileInputStream(commonFieldsConfigPath.toFile())) {
 			byte[] contents = fileInputStream.readAllBytes();
@@ -225,5 +236,5 @@ public class GeneralService implements IGeneralService {
 class IndexInfo {
 	public String fieldsConfig;
 	public List<MenusView> menus;
-	public Map<String, Object> userMsg;
+	public UsermsgsView userMsg;
 }

@@ -40,6 +40,7 @@ import cn.karelian.kas.entities.Users;
 import cn.karelian.kas.exceptions.NullRequestException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.exceptions.TransactionFailedException;
+import cn.karelian.kas.mappers.DeletedUsersMapper;
 import cn.karelian.kas.mappers.RolesMapper;
 import cn.karelian.kas.mappers.UserPermAssocMapper;
 import cn.karelian.kas.mappers.UserRoleAssocMapper;
@@ -67,6 +68,19 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 	public static final String BindVerifyUrl = "/Users/bind/verify/send";
 	public static final String ReviseVerifyUrl = "/Users/revisepwd/verify/send";
 
+	public enum UserDeleteType {
+		DELETE("删除"),
+		CANCEL("注销"),;
+
+		private int value;
+		private String description;
+
+		UserDeleteType(String description) {
+			this.value = super.ordinal() + 1;
+			this.description = description;
+		}
+	}
+
 	@Autowired
 	private UsermsgsMapper usermsgsMapper;
 	@Autowired
@@ -77,6 +91,8 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 	private UserRoleAssocMapper userRoleAssocMapper;
 	@Autowired
 	private RolesMapper rolesMapper;
+	@Autowired
+	private DeletedUsersMapper deletedUsersMapper;
 
 	@Override
 	@Transactional(rollbackFor = TransactionFailedException.class)
@@ -176,8 +192,15 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 	@Transactional(rollbackFor = TransactionFailedException.class)
 	public Result add(UsermsgsView usermsgView) throws TransactionFailedException {
 		Result result = new Result();
-		if (this.lambdaQuery().eq(Users::getId, usermsgView.getId()).exists()) {
-			result.setMsg("用户已存在！");
+		Users old = this.baseMapper.getUserWithLogicDelete(usermsgView.getId(),
+				this.lambdaQuery().select(Users::getDeleted).getWrapper());
+
+		if (null != old) {
+			if (old.getDeleted()) {
+				result.setMsg("无法添加该用户，具有该Id的用户已被标记为删除的！");
+			} else {
+				result.setMsg("用户已存在！");
+			}
 			return result;
 		}
 
@@ -195,7 +218,7 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 			String avatarPrefix = KasApplication.configs.localStorageConfig.avatarUriPrefix.toString();
 			usermsg.setAvatar(avatarPrefix + "/2a952fddb374b962cbb0c60b3e79245d.png");
 		}
-		result.setSuccess(usermsgsMapper.insert(usermsg) == 1);
+		result.setSuccess(usermsgsMapper.updateById(usermsg) == 1);
 		if (!result.isSuccess()) {
 			result.setMsg("添加用户信息失败！");
 			throw new TransactionFailedException(result);
@@ -204,6 +227,27 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 		BeanUtils.copyProperties(user, usermsgView);
 		BeanUtils.copyProperties(usermsg, usermsgView);
 		result.setData(usermsgView);
+		return result;
+	}
+
+	@Override
+	public Result delete(List<Long> ids, UserDeleteType type) {
+		Result result = new Result();
+		if (ids.size() == 0) {
+			result.setMsg("删除用户的Id为空！");
+			return result;
+		}
+
+		if (ids.contains(KasApplication.superAdminId)) {
+			result.setMsg("无法删除该用户！");
+			return result;
+		}
+
+		result.setSuccess(this.baseMapper.delete(ids, type.value));
+		if (!result.isSuccess()) {
+			result.setMsg(type.description + "用户失败！");
+			return result;
+		}
 		return result;
 	}
 
@@ -422,6 +466,47 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 		usermsg.setId(null);
 		result.setSuccess(true);
 		result.setData(EntityUtil.ToMap(usermsg));
+		return result;
+	}
+
+	@Override
+	public Result getDeletedUsers(IndexParam param)
+			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
+		return super.index(deletedUsersMapper, param);
+	}
+
+	@Override
+	public Result restoreDeletedUsers(List<Long> ids) {
+		Result result = new Result();
+		if (ids.size() == 0) {
+			result.setMsg("恢复用户的Id为空！");
+			return result;
+		}
+
+		result.setSuccess(baseMapper.restoreDeletedUsers(ids));
+
+		return result;
+	}
+
+	@Override
+	public Result deleteUsersPermanently(List<Long> ids) {
+		Result result = new Result();
+
+		if (ids.size() == 0) {
+			result.setMsg("删除用户的Id为空！");
+			return result;
+		}
+
+		if (ids.contains(KasApplication.superAdminId)) {
+			result.setMsg("无法删除该用户！");
+			return result;
+		}
+
+		result.setSuccess(baseMapper.deleteUsersPermanently(ids));
+		if (!result.isSuccess()) {
+			result.setMsg("删除失败！");
+		}
+
 		return result;
 	}
 }
