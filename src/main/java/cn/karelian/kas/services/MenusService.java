@@ -361,6 +361,9 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 		if (menu.getOper_type() != null && menu.getOper_type() == 0) {
 			menu.setOper_type(null);
 		}
+		if (menu.getPmid() != null && menu.getPmid() == 0) {
+			menu.setPmid(null);
+		}
 		result.setSuccess(this.save(menu));
 		if (result.isSuccess()) {
 			result.setData(menu);
