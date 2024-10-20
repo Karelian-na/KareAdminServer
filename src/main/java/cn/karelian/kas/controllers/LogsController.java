@@ -1,7 +1,5 @@
 package cn.karelian.kas.controllers;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,7 +42,13 @@ public class LogsController {
 
 	@Authorize
 	@DeleteMapping("/delete")
-	public Result delete(@RequestParam("ids") List<Integer> ids) {
-		return new Result(logsService.removeBatchByIds(ids));
+	public Result delete(@RequestParam Integer id) {
+		return logsService.delete(new Integer[] { id });
+	}
+
+	@Authorize
+	@DeleteMapping("/bulkdelete")
+	public Result delete(@RequestParam Integer[] ids) {
+		return logsService.delete(ids);
 	}
 }

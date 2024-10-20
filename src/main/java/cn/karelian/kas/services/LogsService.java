@@ -1,7 +1,10 @@
 package cn.karelian.kas.services;
 
+import java.util.stream.Stream;
+
 import org.springframework.stereotype.Service;
 
+import cn.karelian.kas.Result;
 import cn.karelian.kas.entities.Logs;
 import cn.karelian.kas.mappers.LogsMapper;
 import cn.karelian.kas.services.interfaces.ILogsService;
@@ -16,5 +19,19 @@ import cn.karelian.kas.services.interfaces.ILogsService;
  */
 @Service
 public class LogsService extends KasService<LogsMapper, Logs, Logs> implements ILogsService {
+	@Override
+	public Result delete(Integer[] ids) {
+		Result result = new Result();
+		if (ids.length == 0) {
+			result.setMsg("删除日志为空！");
+			return result;
+		}
 
+		result.setSuccess(this.removeBatchByIds(Stream.of(ids).toList()));
+		if (!result.isSuccess()) {
+			result.setMsg("删除失败！");
+		}
+
+		return result;
+	}
 }
