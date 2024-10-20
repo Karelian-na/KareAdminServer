@@ -175,6 +175,15 @@ public class ValidateAspect {
 		}
 		String val = String.valueOf(value);
 
+		// 格式不匹配
+		if (!ObjectUtils.isEmpty(validator.regex())) {
+			if (validator.minLen() == 0 && val.length() == 0) {
+				return;
+			} else if (!val.matches(validator.regex())) {
+				throw new InvalidArgumentException(validatingFieldName, FieldErrors.FORMAT);
+			}
+		}
+
 		// 长度不匹配
 		if ((-1 != validator.len() && val.length() != validator.len())) {
 			throw new InvalidArgumentException(validatingFieldName, FieldErrors.FORMAT);
@@ -188,11 +197,6 @@ public class ValidateAspect {
 		// 长度大于最大长度
 		if (-1 != validator.maxLen() && val.length() > validator.maxLen()) {
 			throw new InvalidArgumentException(validatingFieldName, FieldErrors.TOO_LONG);
-		}
-
-		// 格式不匹配
-		if (!ObjectUtils.isEmpty(validator.regex()) && !val.matches(validator.regex())) {
-			throw new InvalidArgumentException(validatingFieldName, FieldErrors.FORMAT);
 		}
 	}
 

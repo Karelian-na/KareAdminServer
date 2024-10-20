@@ -68,13 +68,13 @@ public class UsermsgsView implements Serializable {
 	/**
 	 * 电子邮箱
 	 */
-	@StringValidate(regex = Constants.emailRegex)
+	@StringValidate(minLen = 0, regex = Constants.emailRegex)
 	private String email;
 
 	/**
 	 * 联系方式
 	 */
-	@StringValidate(regex = Constants.phoneRegex)
+	@StringValidate(minLen = 0, regex = Constants.phoneRegex)
 	private String phone;
 
 	/**
