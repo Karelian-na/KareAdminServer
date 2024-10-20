@@ -376,7 +376,7 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 	public Result delete(Long id) {
 		Result result = new Result();
 
-		if (id < 1000) {
+		if (id < 10000) {
 			result.fail("无法删除内置菜单！");
 			return result;
 		}

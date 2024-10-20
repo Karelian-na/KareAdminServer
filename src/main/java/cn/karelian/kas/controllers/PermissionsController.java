@@ -52,7 +52,13 @@ public class PermissionsController {
 	@Authorize
 	@DeleteMapping("/delete")
 	public Result delete(@RequestParam Integer id) throws Exception {
-		return permissionsService.delete(id);
+		return permissionsService.delete(new Integer[] { id });
+	}
+
+	@Authorize
+	@DeleteMapping("/bulkdelete")
+	public Result bulkdelete(@RequestParam Integer[] ids) {
+		return permissionsService.delete(ids);
 	}
 
 	@Authorize

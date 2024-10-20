@@ -1,6 +1,7 @@
 package cn.karelian.kas.services;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.beans.BeanUtils;
@@ -140,9 +141,24 @@ public class PermissionsService extends KasService<PermissionsMapper, Permission
 	}
 
 	@Override
-	public Result delete(Integer id) {
+	public Result delete(Integer[] ids) {
 		Result result = new Result();
-		result.setSuccess(this.removeById(id));
+		if (ids.length == 0) {
+			result.setMsg("删除权限为空！");
+			return result;
+		}
+
+		if (ids.length == 1 && ids[0] < 100) {
+			result.setMsg("无法删除内置权限！");
+			return result;
+		}
+
+		if (!Stream.of(ids).filter(v -> v < 100).findFirst().isEmpty()) {
+			result.setMsg("无法完成此操作，集合中包含不可删除的权限！");
+			return result;
+		}
+
+		result.setSuccess(this.removeBatchByIds(Stream.of(ids).toList()));
 		if (!result.isSuccess()) {
 			result.setMsg("删除权限失败！");
 		}

@@ -34,5 +34,5 @@ public interface IPermissionsService extends IKasService<Permissions, Permission
 
 	public Result update(PermissionsView permission);
 
-	public Result delete(Integer id);
+	public Result delete(Integer[] id);
 }
