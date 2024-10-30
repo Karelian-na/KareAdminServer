@@ -71,22 +71,23 @@ FLUSH PRIVILEGES;
 -- 视图信息表
 	DROP TABLE IF EXISTS views_info;
 	CREATE TABLE views_info(
-		view_name VARCHAR(30) PRIMARY KEY COMMENT '视图名称',
+		id SMALLINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
+		view_name VARCHAR(30) UNIQUE COMMENT '视图名称',
 		comment VARCHAR(100) DEFAULT NULL COMMENT '备注',
 		fields_config VARCHAR(256) DEFAULT NULL COMMENT '字段配置',
 		update_time DATETIME ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 		update_uid BIGINT(12) UNSIGNED COMMENT '更新人',
 		
 		FOREIGN KEY(update_uid) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT
-	);
+	) AUTO_INCREMENT = 100;
 
-	INSERT INTO views_info(view_name, comment, fields_config) VALUES("logs", "系统访问日志记录表", "fields/logs.js");
-	INSERT INTO views_info(view_name, comment, fields_config) VALUES("menus_view", "后台菜单表", "fields/menus_view.js");
-	INSERT INTO views_info(view_name, comment, fields_config) VALUES("permissions_view", "权限表", "fields/permissions_view.js");
-	INSERT INTO views_info(view_name, comment, fields_config) VALUES("roles", "角色表", "fields/roles.js");
-	INSERT INTO views_info(view_name, comment, fields_config) VALUES("usermsgs_view", "用户信息表", "fields/usermsgs_view.js");
-	INSERT INTO views_info(view_name, comment, fields_config) VALUES("deleted_usermsgs_view", "已删除/注销的用户信息表", "fields/deleted_usermsgs_view.js");
-	INSERT INTO views_info(view_name, comment, fields_config) VALUES("views", "管理表字段的表", "fields/views.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(1, "logs", "系统访问日志记录表", "fields/logs.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(2, "menus_view", "后台菜单表", "fields/menus_view.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(3, "permissions_view", "权限表", "fields/permissions_view.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(4, "roles", "角色表", "fields/roles.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(5, "usermsgs_view", "用户信息表", "fields/usermsgs_view.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(6, "deleted_usermsgs_view", "已删除/注销的用户信息表", "fields/deleted_usermsgs_view.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(7, "views", "管理表字段的表", "fields/views.js");
 
 -- 视图信息视图
 	CREATE OR REPLACE VIEW views AS
@@ -109,6 +110,7 @@ FLUSH PRIVILEGES;
 -- 字段信息表
 	DROP TABLE IF EXISTS table_fields_info;
 	CREATE TABLE table_fields_info (
+		id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
 		table_name VARCHAR(50) NOT NULL COMMENT '表名或视图名',
 		display_order TINYINT UNSIGNED DEFAULT 0 COMMENT '次序',
 		display BOOL DEFAULT FALSE COMMENT '是否展示',
@@ -117,73 +119,73 @@ FLUSH PRIVILEGES;
 		editable_when_add BOOL DEFAULT NULL COMMENT '是否添加时可自定义',
 		field_name VARCHAR(50) NOT NULL COMMENT '字段名',
 		display_name VARCHAR(50) DEFAULT NULL COMMENT '展示名',
-		PRIMARY KEY(table_name, field_name)
-	);
+		UNIQUE(table_name, field_name)
+	) AUTO_INCREMENT = 10000;
 
-	INSERT INTO table_fields_info VALUES('views', 0, 1, 1, 0, NULL, 'view_name', '视图名称');
-	INSERT INTO table_fields_info VALUES('views', 1, 1, 0, 1, NULL, 'fields_config', '字段配置');
-	INSERT INTO table_fields_info VALUES('views', 2, 1, 0, 1, NULL, 'comment', '备注');
-	INSERT INTO table_fields_info VALUES('views', 3, 1, 0, 0, NULL, 'update_time', '更新时间');
-	INSERT INTO table_fields_info VALUES('views', 4, 1, 0, 0, NULL, 'update_user', '更新人');
+	INSERT INTO table_fields_info VALUES(1, 'views', 0, 1, 1, 0, NULL, 'view_name', '视图名称');
+	INSERT INTO table_fields_info VALUES(2, 'views', 1, 1, 0, 1, NULL, 'fields_config', '字段配置');
+	INSERT INTO table_fields_info VALUES(3, 'views', 2, 1, 0, 1, NULL, 'comment', '备注');
+	INSERT INTO table_fields_info VALUES(4, 'views', 3, 1, 0, 0, NULL, 'update_time', '更新时间');
+	INSERT INTO table_fields_info VALUES(5, 'views', 4, 1, 0, 0, NULL, 'update_user', '更新人');
 
-	INSERT INTO table_fields_info VALUES('logs', 0, 1, 1, 0, NULL, 'id', NULL);
-	INSERT INTO table_fields_info VALUES('logs', 1, 1, 0, 0, NULL, 'uid', NULL);
-	INSERT INTO table_fields_info VALUES('logs', 2, 1, 0, 0, NULL, 'type', NULL);
-	INSERT INTO table_fields_info VALUES('logs', 3, 1, 1, 0, NULL, 'title', NULL);
-	INSERT INTO table_fields_info VALUES('logs', 4, 1, 1, 0, NULL, 'url', NULL);
-	INSERT INTO table_fields_info VALUES('logs', 5, 1, 1, 0, NULL, 'ip', NULL);
+	INSERT INTO table_fields_info VALUES(101, 'logs', 0, 1, 1, 0, NULL, 'id', NULL);
+	INSERT INTO table_fields_info VALUES(102, 'logs', 1, 1, 0, 0, NULL, 'uid', NULL);
+	INSERT INTO table_fields_info VALUES(103, 'logs', 2, 1, 0, 0, NULL, 'type', NULL);
+	INSERT INTO table_fields_info VALUES(104, 'logs', 3, 1, 1, 0, NULL, 'title', NULL);
+	INSERT INTO table_fields_info VALUES(105, 'logs', 4, 1, 1, 0, NULL, 'url', NULL);
+	INSERT INTO table_fields_info VALUES(106, 'logs', 5, 1, 1, 0, NULL, 'ip', NULL);
 
-	INSERT INTO table_fields_info VALUES('roles', 0, 1, 1, 1, 1, 'name', NULL);
-	INSERT INTO table_fields_info VALUES('roles', 1, 1, 0, 1, 1, 'level', NULL);
-	INSERT INTO table_fields_info VALUES('roles', 2, 1, 0, 0, 0, 'add_time', NULL);
-	INSERT INTO table_fields_info VALUES('roles', 3, 1, 0, 0, 0, 'add_user', NULL);
-	INSERT INTO table_fields_info VALUES('roles', 4, 1, 0, 1, 1, 'descrip', NULL);
-	INSERT INTO table_fields_info VALUES('roles', 5, 1, 0, 0, 0, 'update_time', NULL);
+	INSERT INTO table_fields_info VALUES(201, 'roles', 0, 1, 1, 1, 1, 'name', NULL);
+	INSERT INTO table_fields_info VALUES(202, 'roles', 1, 1, 0, 1, 1, 'level', NULL);
+	INSERT INTO table_fields_info VALUES(203, 'roles', 2, 1, 0, 0, 0, 'add_time', NULL);
+	INSERT INTO table_fields_info VALUES(204, 'roles', 3, 1, 0, 0, 0, 'add_user', NULL);
+	INSERT INTO table_fields_info VALUES(205, 'roles', 4, 1, 0, 1, 1, 'descrip', NULL);
+	INSERT INTO table_fields_info VALUES(206, 'roles', 5, 1, 0, 0, 0, 'update_time', NULL);
 
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 0, 0, 1, 0, 1, 'id', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 1, 1, 1, 1, 1, 'name', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 2, 1, 1, 0, 1, 'uid', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 3, 1, 1, 1, 1, 'phone', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 0, 0, 0, 1, 1, 'avatar', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 0, 0, 0, 1, 1, 'age', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 0, 0, 0, 1, 1, 'bind_email', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 0, 0, 0, 1, 1, 'bind_phone', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 0, 0, 0, 1, 1, 'clan', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 0, 0, 0, 1, 1, 'email', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 0, 0, 0, 1, 1, 'gender', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 0, 0, 0, 1, 1, 'political_status', NULL);
-	INSERT INTO table_fields_info VALUES('usermsgs_view', 0, 0, 0, 1, 1, 'profile', NULL);
+	INSERT INTO table_fields_info VALUES(301, 'usermsgs_view', 0, 0, 1, 0, 1, 'id', NULL);
+	INSERT INTO table_fields_info VALUES(302, 'usermsgs_view', 1, 1, 1, 1, 1, 'name', NULL);
+	INSERT INTO table_fields_info VALUES(303, 'usermsgs_view', 2, 1, 1, 0, 1, 'uid', NULL);
+	INSERT INTO table_fields_info VALUES(304, 'usermsgs_view', 3, 1, 1, 1, 1, 'phone', NULL);
+	INSERT INTO table_fields_info VALUES(305, 'usermsgs_view', 0, 0, 0, 1, 1, 'avatar', NULL);
+	INSERT INTO table_fields_info VALUES(306, 'usermsgs_view', 0, 0, 0, 1, 1, 'age', NULL);
+	INSERT INTO table_fields_info VALUES(307, 'usermsgs_view', 0, 0, 0, 1, 1, 'bind_email', NULL);
+	INSERT INTO table_fields_info VALUES(308, 'usermsgs_view', 0, 0, 0, 1, 1, 'bind_phone', NULL);
+	INSERT INTO table_fields_info VALUES(309, 'usermsgs_view', 0, 0, 0, 1, 1, 'clan', NULL);
+	INSERT INTO table_fields_info VALUES(310, 'usermsgs_view', 0, 0, 0, 1, 1, 'email', NULL);
+	INSERT INTO table_fields_info VALUES(311, 'usermsgs_view', 0, 0, 0, 1, 1, 'gender', NULL);
+	INSERT INTO table_fields_info VALUES(312, 'usermsgs_view', 0, 0, 0, 1, 1, 'political_status', NULL);
+	INSERT INTO table_fields_info VALUES(313, 'usermsgs_view', 0, 0, 0, 1, 1, 'profile', NULL);
 
-	INSERT INTO table_fields_info VALUES('menus_view', 0, 0, 0, 1, 1, 'pmid', '关联权限');
-	INSERT INTO table_fields_info VALUES('menus_view', 0, 0, 0, 1, 1, 'pid', '父菜单');
-	INSERT INTO table_fields_info VALUES('menus_view', 0, 1, 1, 1, 1, 'name', NULL);
-	INSERT INTO table_fields_info VALUES('menus_view', 1, 1, 1, 1, 1, 'url', '地址');
-	INSERT INTO table_fields_info VALUES('menus_view', 2, 1, 0, 0, 1, 'type', NULL);
-	INSERT INTO table_fields_info VALUES('menus_view', 3, 1, 0, 1, 1, 'status', '状态');
-	INSERT INTO table_fields_info VALUES('menus_view', 4, 1, 0, 0, 0, 'add_time', NULL);
-	INSERT INTO table_fields_info VALUES('menus_view', 0, 0, 0, 0, 0, 'add_user', '添加人');
-	INSERT INTO table_fields_info VALUES('menus_view', 0, 0, 0, 1, 1, 'descrip', NULL);
-	INSERT INTO table_fields_info VALUES('menus_view', 0, 0, 0, 1, 1, 'icon', NULL);
-	INSERT INTO table_fields_info VALUES('menus_view', 0, 0, 0, 1, 1, 'oper_type', '操作类型');
+	INSERT INTO table_fields_info VALUES(401, 'menus_view', 0, 0, 0, 1, 1, 'pmid', '关联权限');
+	INSERT INTO table_fields_info VALUES(402, 'menus_view', 0, 0, 0, 1, 1, 'pid', '父菜单');
+	INSERT INTO table_fields_info VALUES(403, 'menus_view', 0, 1, 1, 1, 1, 'name', NULL);
+	INSERT INTO table_fields_info VALUES(404, 'menus_view', 1, 1, 1, 1, 1, 'url', '地址');
+	INSERT INTO table_fields_info VALUES(405, 'menus_view', 2, 1, 0, 0, 1, 'type', NULL);
+	INSERT INTO table_fields_info VALUES(406, 'menus_view', 3, 1, 0, 1, 1, 'status', '状态');
+	INSERT INTO table_fields_info VALUES(407, 'menus_view', 4, 1, 0, 0, 0, 'add_time', NULL);
+	INSERT INTO table_fields_info VALUES(408, 'menus_view', 0, 0, 0, 0, 0, 'add_user', '添加人');
+	INSERT INTO table_fields_info VALUES(409, 'menus_view', 0, 0, 0, 1, 1, 'descrip', NULL);
+	INSERT INTO table_fields_info VALUES(410, 'menus_view', 0, 0, 0, 1, 1, 'icon', NULL);
+	INSERT INTO table_fields_info VALUES(411, 'menus_view', 0, 0, 0, 1, 1, 'oper_type', '操作类型');
 
-	INSERT INTO table_fields_info VALUES('permissions_view', 0, 1, 1, 0, 0, 'id', NULL);
-	INSERT INTO table_fields_info VALUES('permissions_view', 1, 1, 1, 1, 1, 'name', NULL);
-	INSERT INTO table_fields_info VALUES('permissions_view', 2, 1, 0, 1, 1, 'status', NULL);
-	INSERT INTO table_fields_info VALUES('permissions_view', 3, 0, 1, 1, 1, 'guid', NULL);
-	INSERT INTO table_fields_info VALUES('permissions_view', 4, 1, 0, 1, 1, 'oper_type', NULL);
-	INSERT INTO table_fields_info VALUES('permissions_view', 5, 1, 0, 0, 0, 'add_user', '添加人');
-	INSERT INTO table_fields_info VALUES('permissions_view', 6, 1, 0, 0, 0, 'add_time', NULL);
-	INSERT INTO table_fields_info VALUES('permissions_view', 7, 1, 0, 0, 0, 'update_time', NULL);
-	INSERT INTO table_fields_info VALUES('permissions_view', 8, 0, 0, 1, 1, 'descrip', NULL);
+	INSERT INTO table_fields_info VALUES(501, 'permissions_view', 0, 1, 1, 0, 0, 'id', NULL);
+	INSERT INTO table_fields_info VALUES(502, 'permissions_view', 1, 1, 1, 1, 1, 'name', NULL);
+	INSERT INTO table_fields_info VALUES(503, 'permissions_view', 2, 1, 0, 1, 1, 'status', NULL);
+	INSERT INTO table_fields_info VALUES(504, 'permissions_view', 3, 0, 1, 1, 1, 'guid', NULL);
+	INSERT INTO table_fields_info VALUES(505, 'permissions_view', 4, 1, 0, 1, 1, 'oper_type', NULL);
+	INSERT INTO table_fields_info VALUES(506, 'permissions_view', 5, 1, 0, 0, 0, 'add_user', '添加人');
+	INSERT INTO table_fields_info VALUES(507, 'permissions_view', 6, 1, 0, 0, 0, 'add_time', NULL);
+	INSERT INTO table_fields_info VALUES(508, 'permissions_view', 7, 1, 0, 0, 0, 'update_time', NULL);
+	INSERT INTO table_fields_info VALUES(509, 'permissions_view', 8, 0, 0, 1, 1, 'descrip', NULL);
 
-	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 0, 1, 1, 0, NULL, 'name', NULL);
-	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 1, 1, 0, 0, NULL, 'delete_time', NULL);
-	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 2, 1, 0, 0, NULL, 'delete_user', NULL);
-	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 3, 1, 0, 0, NULL, 'add_time', NULL);
-	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 4, 1, 0, 0, NULL, 'last_login_time', NULL);
-	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 5, 1, 0, 0, NULL, 'delete_type', NULL);
-	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 6, 1, 0, 0, NULL, 'bind_email', NULL);
-	INSERT INTO table_fields_info VALUES ('deleted_usermsgs_view', 7, 1, 0, 0, NULL, 'bind_phone', NULL);
+	INSERT INTO table_fields_info VALUES(601, 'deleted_usermsgs_view', 0, 1, 1, 0, NULL, 'name', NULL);
+	INSERT INTO table_fields_info VALUES(602, 'deleted_usermsgs_view', 1, 1, 0, 0, NULL, 'delete_time', NULL);
+	INSERT INTO table_fields_info VALUES(603, 'deleted_usermsgs_view', 2, 1, 0, 0, NULL, 'delete_user', NULL);
+	INSERT INTO table_fields_info VALUES(604, 'deleted_usermsgs_view', 3, 1, 0, 0, NULL, 'add_time', NULL);
+	INSERT INTO table_fields_info VALUES(605, 'deleted_usermsgs_view', 4, 1, 0, 0, NULL, 'last_login_time', NULL);
+	INSERT INTO table_fields_info VALUES(606, 'deleted_usermsgs_view', 5, 1, 0, 0, NULL, 'delete_type', NULL);
+	INSERT INTO table_fields_info VALUES(607, 'deleted_usermsgs_view', 6, 1, 0, 0, NULL, 'bind_email', NULL);
+	INSERT INTO table_fields_info VALUES(608, 'deleted_usermsgs_view', 7, 1, 0, 0, NULL, 'bind_phone', NULL);
 
 -- 字段信息视图
 	CREATE OR REPLACE VIEW fields_info_view AS

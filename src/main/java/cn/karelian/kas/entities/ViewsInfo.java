@@ -1,6 +1,7 @@
 package cn.karelian.kas.entities;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -25,9 +26,14 @@ public class ViewsInfo implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/**
+	 * ID
+	 */
+	@TableId(value = "id", type = IdType.AUTO)
+	private Integer id;
+
+	/**
 	 * 视图名称
 	 */
-	@TableId
 	private String view_name;
 
 	/**
