@@ -45,7 +45,7 @@ public abstract class NumericArrayTypeHandler<T extends Number> extends BaseType
 	@Override
 	public void setNonNullParameter(PreparedStatement ps, int i, T[] parameter, JdbcType jdbcType)
 			throws SQLException {
-		ps.setString(i, String.join(",", List.of(parameter).toArray(String[]::new)));
+		ps.setString(i, String.join(",", List.of(parameter).stream().map(String::valueOf).toList()));
 	}
 
 	@Override
