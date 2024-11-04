@@ -92,20 +92,15 @@ FLUSH PRIVILEGES;
 -- 视图信息视图
 	CREATE OR REPLACE VIEW views AS
 		SELECT 
-			TABLES.TABLE_NAME AS view_name,
+			views_info.view_name,
 			views_info.fields_config,
 			views_info.`comment`,
 			views_info.update_time,
 			usermsgs.name AS update_user,
 			NULL AS fields
-		FROM information_schema.`TABLES` TABLES
-		LEFT JOIN views_info ON TABLES.TABLE_NAME = views_info.view_name
+		FROM views_info
 		LEFT JOIN usermsgs ON views_info.update_uid = usermsgs.id
-		WHERE 
-			TABLE_SCHEMA = 'kas' 
-			AND TABLE_NAME NOT IN ("table_fields_info", "fields_info_view", "views_info", "role_perm_assoc", "user_perm_assoc", "user_role_assoc")
--- 			AND TABLE_TYPE = "VIEW"
-		;
+				;
 
 -- 字段信息表
 	DROP TABLE IF EXISTS table_fields_info;

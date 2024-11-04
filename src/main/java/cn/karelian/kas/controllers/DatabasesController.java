@@ -18,6 +18,14 @@ import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.exceptions.TransactionFailedException;
 import cn.karelian.kas.services.DatabasesService;
 import cn.karelian.kas.views.Views;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+class DatabaseIndexParam extends IndexParam {
+	private String viewName;
+}
 
 @RestController
 @RequestMapping("/databases")
@@ -27,9 +35,13 @@ public class DatabasesController {
 
 	@Authorize
 	@GetMapping("/index")
-	public Result index(@ModelAttribute IndexParam params)
+	public Result index(@ModelAttribute DatabaseIndexParam params)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
-		return databasesService.index(params);
+		if (params.getViewName() != null) {
+			return databasesService.editindex(params.getViewName());
+		} else {
+			return databasesService.index(params);
+		}
 	}
 
 	@Authorize
