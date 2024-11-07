@@ -38,6 +38,7 @@ import cn.karelian.kas.entities.UserRoleAssoc;
 import cn.karelian.kas.entities.Usermsgs;
 import cn.karelian.kas.entities.Users;
 import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.IllegalAccessException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.exceptions.TransactionFailedException;
 import cn.karelian.kas.mappers.DeletedUsersMapper;

@@ -43,7 +43,12 @@ public enum CommonErrors {
 	/**
 	 * 事务错误
 	 */
-	OPERATION_NOT_ALLOWED("操作不允许");
+	OPERATION_NOT_ALLOWED("操作不允许"),
+	/**
+	 * 数据操作错误
+	 */
+	DATA_OPERATION("数据操作错误"),
+	;
 
 	private static final int START = 0x5000001;
 

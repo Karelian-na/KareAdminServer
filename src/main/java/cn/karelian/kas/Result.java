@@ -96,7 +96,7 @@ public class Result {
 		this.msg = msg;
 	}
 
-	public void error(Enum<?> val) {
+	public void error(Enum<?> val, String msg) {
 		this.success = false;
 		this.data = null;
 		Class<?> clszz = val.getDeclaringClass();
@@ -110,9 +110,16 @@ public class Result {
 			if (null != field) {
 				field.setAccessible(true);
 				this.msg = (String) field.get(val);
+				if (msg != null) {
+					this.msg += "," + msg;
+				}
 			}
 		} catch (Exception e) {
 		}
+	}
+
+	public void error(Enum<?> val) {
+		this.error(val, null);
 	}
 
 	public static Result internalError(String msg) {

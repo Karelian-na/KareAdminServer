@@ -31,6 +31,7 @@ import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.entities.TableFieldsInfo;
 import cn.karelian.kas.entities.ViewsInfo;
 import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.IllegalAccessException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.exceptions.TransactionFailedException;
 import cn.karelian.kas.mappers.ViewsInfoMapper;

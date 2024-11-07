@@ -27,6 +27,7 @@ import cn.karelian.kas.codes.FieldErrors;
 import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.dtos.IndexParam.IndexType;
 import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.IllegalAccessException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.mappers.MenusMapper;
 import cn.karelian.kas.mappers.KasMapper;

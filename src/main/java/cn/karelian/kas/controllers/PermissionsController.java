@@ -16,6 +16,7 @@ import cn.karelian.kas.annotations.Authorize;
 import cn.karelian.kas.annotations.Validate;
 import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.IllegalAccessException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.services.PermissionsService;
 import cn.karelian.kas.utils.NonEmptyStrategy;

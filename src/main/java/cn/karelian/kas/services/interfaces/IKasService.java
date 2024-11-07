@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import cn.karelian.kas.Result;
 import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.IllegalAccessException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.utils.WebPageInfo;
 import cn.karelian.kas.views.FieldsInfoView;

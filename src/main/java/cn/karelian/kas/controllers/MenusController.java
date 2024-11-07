@@ -16,6 +16,7 @@ import cn.karelian.kas.annotations.Authorize;
 import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.entities.Menus;
 import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.IllegalAccessException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.services.MenusService;
 

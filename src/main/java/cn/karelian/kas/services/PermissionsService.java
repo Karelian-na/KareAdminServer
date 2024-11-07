@@ -13,6 +13,7 @@ import cn.karelian.kas.Result;
 import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.entities.Permissions;
 import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.IllegalAccessException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.mappers.PermissionsMapper;
 import cn.karelian.kas.mappers.RolePermAssocMapper;
