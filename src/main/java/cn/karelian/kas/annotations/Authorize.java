@@ -14,4 +14,6 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Authorize {
 	String value() default "";
+
+	String log() default "";
 }

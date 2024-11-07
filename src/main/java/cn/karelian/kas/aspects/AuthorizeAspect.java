@@ -9,6 +9,7 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import cn.karelian.kas.annotations.Authorize;
 import cn.karelian.kas.exceptions.InvalidArgumentException;
 import cn.karelian.kas.exceptions.NullRequestException;
 import cn.karelian.kas.exceptions.OperationNotAllowedException;
@@ -35,8 +36,8 @@ public class AuthorizeAspect {
 	private void authorizePointcutFilter() {
 	}
 
-	@Before("authorizePointcutFilter()")
-	public void canAccess(JoinPoint joinPoint) throws NullRequestException, UnLoginException,
+	@Before("authorizePointcutFilter() && @annotation(anno)")
+	public void canAccess(JoinPoint joinPoint, Authorize anno) throws NullRequestException, UnLoginException,
 			PermissionNotFoundException, UnAuthorizedAccessException, InvalidArgumentException,
 			OperationNotAllowedException {
 		HttpServletRequest request = HttpUtil.getRequest();
@@ -44,7 +45,7 @@ public class AuthorizeAspect {
 			throw new UnLoginException();
 		}
 
-		String url = request.getRequestURI();
+		String url = anno.value().isEmpty() ? request.getRequestURI() : anno.value();
 		MenusView menu = menusService.getByUrl(url);
 		while (menu == null) {
 			if (url.endsWith("/bulkdelete")) {
@@ -67,7 +68,7 @@ public class AuthorizeAspect {
 			throw new UnAuthorizedAccessException();
 		}
 
-		logAspect.log(request, menu.getName(), joinPoint);
+		logAspect.log(request, anno.log().isEmpty() ? menu.getName() : anno.log(), joinPoint);
 	}
 
 }
