@@ -1,5 +1,7 @@
 package cn.karelian.kas.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import cn.karelian.kas.annotations.ComparableValidate;
 import cn.karelian.kas.annotations.StringValidate;
 import lombok.Getter;
@@ -8,6 +10,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class IndexParam {
+	public enum IndexType {
+		Page,
+		One,
+		All
+	};
+
 	@ComparableValidate(min = 20, max = 200)
 	public Long initPageSize;
 
@@ -22,5 +30,6 @@ public class IndexParam {
 
 	public String searchField;
 
-	public boolean one;
+	@JsonIgnore
+	public IndexType type = IndexType.Page;
 }

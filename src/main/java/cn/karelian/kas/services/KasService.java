@@ -25,6 +25,7 @@ import cn.karelian.kas.KasApplication;
 import cn.karelian.kas.Result;
 import cn.karelian.kas.codes.FieldErrors;
 import cn.karelian.kas.dtos.IndexParam;
+import cn.karelian.kas.dtos.IndexParam.IndexType;
 import cn.karelian.kas.exceptions.NullRequestException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.mappers.MenusMapper;
@@ -79,10 +80,15 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 
 	public static <V> WebPageInfo<V> getWebPageInfo(Class<V> clszz)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
-		return KasService.getWebPageInfo(clszz, null);
+		return KasService.getWebPageInfo(clszz, null, true);
 	}
 
-	public static <V> WebPageInfo<V> getWebPageInfo(Class<V> clszz, Wrapper<V> qw)
+	public static <V> WebPageInfo<V> getWebPageInfo(Class<V> clszz, boolean checkOperAuths)
+			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
+		return KasService.getWebPageInfo(clszz, null, checkOperAuths);
+	}
+
+	public static <V> WebPageInfo<V> getWebPageInfo(Class<V> clszz, Wrapper<V> qw, boolean checkOperAuths)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
 		if (permissionsMapper == null) {
 			getBeans();
@@ -90,13 +96,16 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 		HttpServletRequest request = HttpUtil.getRequest();
 
 		Long uid = (Long) request.getSession().getAttribute("id");
-		String url = request.getRequestURI();
+		MenusView menu = null;
 
-		MenusView menu = menusMapper.getByUrl(url);
-		if (null == menu) {
-			menu = menusMapper.getByUrl(request.getRequestURI());
+		if (checkOperAuths) {
+			String url = request.getRequestURI();
+			menu = menusMapper.getByUrl(url);
 			if (null == menu) {
-				throw new PermissionNotFoundException();
+				menu = menusMapper.getByUrl(request.getRequestURI());
+				if (null == menu) {
+					throw new PermissionNotFoundException();
+				}
 			}
 		}
 
@@ -124,8 +133,15 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 		info.fields = KasService.getFields(clszz, qw);
 
 		// 获取操作权限
-		info.operButtons = menusMapper.getAuthorizedOperationPermissions(uid, menu);
+		if (checkOperAuths) {
+			info.operButtons = menusMapper.getAuthorizedOperationPermissions(uid, menu);
+		}
 		return info;
+	}
+
+	public static <V> WebPageInfo<V> getWebPageInfo(Class<V> clszz, Wrapper<V> qw)
+			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
+		return KasService.getWebPageInfo(clszz, qw, true);
 	}
 
 	public static <E, V> Result getPageData(KasMapper<E, V> mapper, IndexParam params, Wrapper<V> qw) {
@@ -146,8 +162,12 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 			params.pageSize = 20L;
 		}
 
-		if (params.one) {
+		if (params.type == IndexType.One) {
 			return new Result(true, mapper.selectViewOne(qw));
+		} else if (params.type == IndexType.All) {
+			PageData<V> pageData = new PageData<>();
+			pageData.data = mapper.selectViewList(qw);
+			return new Result(true, pageData);
 		} else {
 			Long nTotal = mapper.selectViewCount(qw);
 			PageData<V> pageData = new PageData<>();
@@ -179,14 +199,14 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <E, V> Result index(KasMapper<E, V> mapper, IndexParam params, Wrapper<V> qw)
+	public static <E, V> Result index(KasMapper<E, V> mapper, IndexParam params, Wrapper<V> qw, boolean checkOperAuths)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
 		if (params.initPageSize != null) {
 			Class<?>[] clszzes = AopProxyUtils.proxiedUserInterfaces(mapper);
 			Type[] type = clszzes[0].getGenericInterfaces();
 			Class<V> clszz = (Class<V>) ((ParameterizedType) (type[0])).getActualTypeArguments()[1];
 
-			WebPageInfo<V> info = KasService.getWebPageInfo(clszz, qw);
+			WebPageInfo<V> info = KasService.getWebPageInfo(clszz, qw, checkOperAuths);
 
 			params.pageSize = params.initPageSize;
 			Result result = KasService.getPageData(mapper, params, qw);
@@ -197,6 +217,11 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 		} else {
 			return KasService.getPageData(mapper, params, qw);
 		}
+	}
+
+	public static <E, V> Result index(KasMapper<E, V> mapper, IndexParam params, Wrapper<V> qw)
+			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
+		return KasService.index(mapper, params, qw, true);
 	}
 
 	//
@@ -236,7 +261,7 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 	@Override
 	public WebPageInfo<V> getWebPageInfo(Wrapper<V> qw)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
-		return KasService.getWebPageInfo(this.viewClass, qw);
+		return KasService.getWebPageInfo(this.viewClass, qw, true);
 	}
 
 	@Override
