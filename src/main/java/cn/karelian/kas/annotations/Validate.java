@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 
 import cn.karelian.kas.utils.NonEmptyStrategy;
 
-@Target({ ElementType.PARAMETER })
+@Target({ ElementType.PARAMETER, ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 /**

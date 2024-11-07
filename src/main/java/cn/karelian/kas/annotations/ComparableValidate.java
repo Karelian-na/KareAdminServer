@@ -43,4 +43,11 @@ public @interface ComparableValidate {
 	 * @return
 	 */
 	String dependsOn() default "";
+
+	/**
+	 * 枚举数值键值
+	 * 
+	 * @return
+	 */
+	String enumKey() default "ordinal";
 }

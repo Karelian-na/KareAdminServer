@@ -1,11 +1,14 @@
 package cn.karelian.kas.aspects;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
@@ -142,9 +145,127 @@ public class ValidateAspect {
 		return context;
 	}
 
-	private void validateGeneral(Object descriptor, Object arg, Object argContainer, Validate rule)
-			throws InvalidArgumentException {
-		this.commonValiate(descriptor, arg, argContainer, rule, GeneralValidate.class);
+	private void validateField(Field field, Object obj, Validate rule, Map<String, Boolean> fieldsEditableMap,
+			int depth)
+			throws InternalError, InvalidArgumentException, OperationNotAllowedException {
+		Boolean access = field.canAccess(obj);
+		if (!access) {
+			field.setAccessible(true);
+		}
+
+		Object value = null;
+		try {
+			value = field.get(obj);
+		} catch (Exception e) {
+			throw new InternalError("Failed to get field value when validating!");
+		}
+
+		boolean isAdd = rule.nonEmptyStrategy() == NonEmptyStrategy.ADD;
+		boolean isOperation = (rule.nonEmptyStrategy() & NonEmptyStrategy.OPERATION) != 0;
+		if (isOperation && fieldsEditableMap != null) {
+			String fieldName = field.getName();
+
+			if (fieldName.equals(rule.uniqueKey())) {
+				if (!isAdd && ObjectUtils.isEmpty(value)) {
+					throw new InvalidArgumentException(fieldName, FieldErrors.EMPTY);
+				}
+			} else if (fieldsEditableMap.get(fieldName) == null) {
+			} else if (null != value && !fieldsEditableMap.get(fieldName)) {
+				throw new OperationNotAllowedException(fieldName);
+			}
+		}
+
+		if (field.isAnnotationPresent(StringValidate.class)) {
+			validateString(field, value, obj, rule);
+		} else if (field.isAnnotationPresent(ComparableValidate.class)) {
+			validateComparable(field, value, obj, rule);
+		} else if (field.isAnnotationPresent(GeneralValidate.class)) {
+			validateGeneral(field, value, obj, rule, depth);
+		}
+	}
+
+	@SuppressWarnings("rawtypes")
+	public void validateObject(Object obj, Validate rule, int depth, String... validateFields)
+			throws InvalidArgumentException, OperationNotAllowedException {
+		if (obj == null) {
+			return;
+		}
+
+		var clszz = obj.getClass();
+		// validate Array, like Permissions[]
+		if (clszz.isArray()) {
+			for (int idx = 0; idx < Array.getLength(obj); idx++) {
+				try {
+					validateObject(Array.get(obj, idx), rule, depth);
+				} catch (IndexOutOfBoundsException e) {
+				}
+			}
+			return;
+		}
+
+		// validate Map, like Map<String, Permissions>
+		if (obj instanceof Map) {
+			var mapValue = (Map) obj;
+			for (Object item : mapValue.values()) {
+				validateObject(item, rule, depth);
+			}
+			return;
+		}
+
+		// validate Map, like Set<Permissions>
+		if (obj instanceof Set) {
+			var setValue = (Set) obj;
+			for (Object item : setValue) {
+				validateObject(item, rule, depth);
+			}
+			return;
+		}
+
+		boolean isAdd = rule.nonEmptyStrategy() == NonEmptyStrategy.ADD;
+		boolean isOperation = (rule.nonEmptyStrategy() & NonEmptyStrategy.OPERATION) != 0;
+		var fieldsEditableMap = isOperation ? tableFieldsInfoService.getFieldsEditableMap(clszz, isAdd) : null;
+
+		if (validateFields.length != 0) {
+			for (String fieldName : List.of(validateFields)) {
+				Field field = EntityUtil.getFieldIncludeSuperClasses(obj, fieldName);
+				if (field == null) {
+					continue;
+				}
+				logger.info("Validating field " + "    ".repeat(depth) + "`" + fieldName + "` of object `"
+						+ clszz.getSimpleName() + "`");
+				validateField(field, obj, rule, fieldsEditableMap, depth + 1);
+			}
+			return;
+		}
+
+		var fields = EntityUtil.getFieldsIncludeSuperClasses(obj);
+		for (Field field : fields) {
+			if (Modifier.isStatic(field.getModifiers())) {
+				continue;
+			}
+
+			logger.info("Validating field " + "    ".repeat(depth) + "`" + field.getName() + "` of object `"
+					+ clszz.getSimpleName() + "`");
+			validateField(field, obj, rule, fieldsEditableMap, depth + 1);
+		}
+	}
+
+	private void validateGeneral(Object descriptor, Object arg, Object argContainer, Validate rule, int depth)
+			throws InvalidArgumentException, OperationNotAllowedException {
+		if (descriptor instanceof Field) {
+			var context = this.commonValiate(descriptor, arg, argContainer, rule, GeneralValidate.class);
+
+			if (!context.validator.validateComponentType()) {
+				return;
+			}
+
+			Field field = (Field) descriptor;
+			if (field.isAnnotationPresent(Validate.class)) {
+				rule = field.getAnnotation(Validate.class);
+			}
+		}
+
+		validateObject(arg, rule, depth);
 	}
 
 	private void validateString(Object descriptor, Object value, Object argContainer, Validate rule)
@@ -210,6 +331,18 @@ public class ValidateAspect {
 		var validator = context.validator;
 		var validatingFieldName = context.validatingFieldName;
 
+		if (value instanceof Enum) {
+			try {
+				Method method = value.getClass().getMethod(validator.enumKey());
+				value = method.invoke(value);
+			} catch (Exception e) {
+				String msg = "Invalid configuration for `Comparable` annotation, the method specified by `enumKey` was not exists in type `"
+						+ value.getClass().getSimpleName() + "`";
+
+				throw new InternalError(msg);
+			}
+		}
+
 		// validate value
 		if (validator.value() != Long.MIN_VALUE) {
 			if (compare(value, validator.value()) != 0) {
@@ -261,55 +394,7 @@ public class ValidateAspect {
 			if (null == rule) {
 				continue;
 			}
-
-			Class<?> clszz = curArg.getClass();
-
-			boolean isAdd = false;
-			Map<String, Boolean> fieldsEditableMap = null;
-			boolean isOperation = (rule.nonEmptyStrategy() & NonEmptyStrategy.OPERATION) != 0;
-			if (isOperation) {
-				isAdd = rule.nonEmptyStrategy() == NonEmptyStrategy.ADD;
-				fieldsEditableMap = tableFieldsInfoService.getFieldsEditableMap(clszz, isAdd);
-			}
-
-			var fields = EntityUtil.getFieldsIncludeSuperClasses(curArg);
-			for (Field field : fields) {
-				if (Modifier.isStatic(field.getModifiers())) {
-					continue;
-				}
-				Boolean access = field.canAccess(curArg);
-				if (!access) {
-					field.setAccessible(true);
-				}
-
-				Object value = null;
-				try {
-					value = field.get(curArg);
-				} catch (Exception e) {
-					throw new InternalError("Failed to get field value when validating!");
-				}
-
-				if (isOperation && fieldsEditableMap != null) {
-					String fieldName = field.getName();
-
-					if (fieldName.equals(rule.uniqueKey())) {
-						if (!isAdd && ObjectUtils.isEmpty(value)) {
-							throw new InvalidArgumentException(fieldName, FieldErrors.EMPTY);
-						}
-					} else if (fieldsEditableMap.get(fieldName) == null) {
-					} else if (null != value && !fieldsEditableMap.get(fieldName)) {
-						throw new OperationNotAllowedException(fieldName);
-					}
-				}
-
-				if (field.isAnnotationPresent(StringValidate.class)) {
-					validateString(field, value, curArg, rule);
-				} else if (field.isAnnotationPresent(ComparableValidate.class)) {
-					validateComparable(field, value, curArg, rule);
-				} else if (field.isAnnotationPresent(GeneralValidate.class)) {
-					validateGeneral(field, value, curArg, rule);
-				}
-			}
+			validateGeneral(curParam, curArg, params, rule, 0);
 		}
 	}
 }

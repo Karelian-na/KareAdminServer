@@ -25,4 +25,11 @@ public @interface GeneralValidate {
 	 * @return
 	 */
 	String dependsOn() default "";
+
+	/**
+	 * 当类型为 Array 或 Map 或 Set 时，是否校验元素类型
+	 * 
+	 * @return
+	 */
+	boolean validateComponentType() default false;
 }

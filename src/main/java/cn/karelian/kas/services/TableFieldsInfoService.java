@@ -51,7 +51,12 @@ public class TableFieldsInfoService extends KasService<TableFieldsInfoMapper, Ta
 
 	@Override
 	public Map<String, Boolean> getFieldsEditableMap(Class<?> entityOrViewClszz, boolean isAdd) {
-		String viewName = TableInfoHelper.getTableInfo(entityOrViewClszz).getTableName();
+		var tableInfo = TableInfoHelper.getTableInfo(entityOrViewClszz);
+		if (null == tableInfo) {
+			return null;
+		}
+
+		String viewName = tableInfo.getTableName();
 
 		if (!allFieldsConfigs.containsKey(viewName)) {
 			return null;

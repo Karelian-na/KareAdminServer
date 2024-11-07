@@ -1,9 +1,14 @@
 package cn.karelian.kas.utils;
 
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
+import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -93,10 +98,23 @@ public class EntityUtil {
 		Class<?> clazz = model.getClass();
 		List<Field> fields = new ArrayList<>();
 		while (clazz != null) {
-			fields.addAll(new ArrayList<>(Arrays.asList(clazz.getDeclaredFields())));
+			fields.addAll(0, new ArrayList<>(Arrays.asList(clazz.getDeclaredFields())));
 			clazz = clazz.getSuperclass();
 		}
 		return fields;
+	}
+
+	public static Field getFieldIncludeSuperClasses(Object model, String fieldName) {
+		Class<?> clszz = model.getClass();
+		Field field = null;
+		while (clszz != null) {
+			try {
+				field = clszz.getDeclaredField(fieldName);
+			} catch (NoSuchFieldException e) {
+			}
+			clszz = clszz.getSuperclass();
+		}
+		return field;
 	}
 
 	public static FieldErrors CheckStringField(String value, int len, boolean noEmpty) {
@@ -140,5 +158,117 @@ public class EntityUtil {
 		}
 
 		return err;
+	}
+
+	/**
+	 * Create a runtime annotation
+	 * 
+	 * @param <T>    the annotation type
+	 * @param <R>    ignored
+	 * @param clszz  the annotation class
+	 * @param values the annotation's init value
+	 * @return
+	 */
+	public static <T extends Annotation, R> T createAnnatation(Class<T> clszz,
+			Map<SerializableFunction<T, R>, Object> values) {
+		return new AnnotationInvocationHandler<T, R>(clszz, values).target();
+	}
+
+	/**
+	 * Set an annotation's member value, the annotation must created by function
+	 * {@code createAnnatation}
+	 * 
+	 * @param <T>the     annotation type
+	 * @param <R>the     ignored
+	 * @param annotation the annotation instance
+	 * @param column     the member need to be changed
+	 * @param value      changed value
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T extends Annotation, R> void setAnnotationValue(T annotation, SerializableFunction<T, R> column,
+			Object value) {
+		InvocationHandler handler = Proxy.getInvocationHandler(annotation);
+
+		if (!(handler instanceof AnnotationInvocationHandler)) {
+			throw new UnsupportedOperationException(
+					"The function `setAnnotationValue` only worked when the annotation was created by `createAnnatation`!");
+		}
+
+		Class<?> clszz = handler.getClass();
+		try {
+			Field field = clszz.getDeclaredField("memberValues");
+			field.setAccessible(true);
+
+			var memberValues = (Map<String, Object>) field.get(handler);
+
+			String key = getFieldName(column);
+			memberValues.put(key, value);
+		} catch (Exception e) {
+		}
+	}
+
+	/**
+	 * Get field name through the field's getter accessor
+	 * 
+	 * @param <T>      the type of the field
+	 * @param <R>      ignored
+	 * @param function the field's getter accessor
+	 * @return
+	 */
+	public static <T, R> String getFieldName(SerializableFunction<T, R> function) {
+		try {
+			Method writeReplace = function.getClass().getDeclaredMethod("writeReplace");
+			writeReplace.setAccessible(true);
+
+			SerializedLambda serializedLambda = (SerializedLambda) writeReplace.invoke(function);
+
+			String methodName = serializedLambda.getImplMethodName();
+			if (methodName.startsWith("get")) {
+				methodName = methodName.substring(3);
+			} else if (methodName.startsWith("is")) {
+				methodName = methodName.substring(2);
+			}
+
+			return Character.toLowerCase(methodName.charAt(0)) + methodName.substring(1);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to extract field name from function", e);
+		}
+	}
+}
+
+class AnnotationInvocationHandler<T extends Annotation, R> implements InvocationHandler {
+	private final Map<String, Object> memberValues;
+	private final Class<T> type;
+
+	public AnnotationInvocationHandler(Class<T> clszz, Map<SerializableFunction<T, R>, Object> values) {
+		this.memberValues = new HashMap<>();
+
+		values.forEach((column, value) -> {
+			String key = EntityUtil.getFieldName(column);
+			memberValues.put(key, value);
+		});
+
+		var memberMethods = clszz.getDeclaredMethods();
+		for (var method : memberMethods) {
+			String key = method.getName();
+
+			if (!memberValues.containsKey(key)) {
+				memberValues.put(key, method.getDefaultValue());
+			}
+		}
+
+		type = clszz;
+	}
+
+	@Override
+	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		String valueName = method.getName();
+
+		return memberValues.get(valueName);
+	}
+
+	@SuppressWarnings("unchecked")
+	public T target() {
+		return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class[] { type }, this);
 	}
 }
