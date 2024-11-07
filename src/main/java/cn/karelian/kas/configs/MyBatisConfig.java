@@ -14,8 +14,10 @@ import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.core.injector.AbstractMethod;
 import com.baomidou.mybatisplus.core.injector.DefaultSqlInjector;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import cn.karelian.kas.exceptions.NullRequestException;
 import cn.karelian.kas.mappers.methods.SelectViewById;
@@ -28,6 +30,10 @@ import cn.karelian.kas.utils.LoginInfomationUtil;
 
 @Configuration
 public class MyBatisConfig {
+
+	MyBatisConfig(ObjectMapper objectMapper) {
+		JacksonTypeHandler.setObjectMapper(objectMapper);
+	}
 
 	@Bean
 	MybatisPlusInterceptor getInterceptor() {
