@@ -33,6 +33,9 @@ export default {
 			type: "textarea",
 			rows: 12,
 		},
+		columnBindProps: {
+			align: "left"
+		}
 	},
 
 	update_time: {

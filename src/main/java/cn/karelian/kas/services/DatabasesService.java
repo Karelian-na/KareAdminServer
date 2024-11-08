@@ -135,14 +135,6 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 		ViewsInfo viewInfo = new ViewsInfo();
 		BeanUtils.copyProperties(params, viewInfo, "viewName", "fields_config");
 
-		var luw = Wrappers.update((ViewsInfo) null).eq("view_name", params.getView_name());
-		MybatisPlusUtil.applyNonNullUpdateFields(viewInfo, luw);
-		result.setSuccess(this.saveOrUpdate(viewInfo, luw));
-		if (!result.isSuccess()) {
-			result.setMsg("更新试图失败！");
-			throw new TransactionFailedException(result);
-		}
-
 		// 更新字段列表
 		if (params.fields != null) {
 			for (String key : params.fields.keySet()) {
@@ -233,6 +225,14 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 				throw new TransactionFailedException(result);
 			}
 		} while (false);
+
+		var luw = Wrappers.<ViewsInfo>update().eq("view_name", params.getView_name());
+		MybatisPlusUtil.applyNonNullUpdateFields(viewInfo, luw);
+		result.setSuccess(this.saveOrUpdate(viewInfo, luw));
+		if (!result.isSuccess()) {
+			result.setMsg("更新试图失败！");
+			throw new TransactionFailedException(result);
+		}
 
 		if (params.fields != null) {
 			tableFieldsInfoService.reloadFieldsConfigs();
