@@ -22,6 +22,8 @@ import org.springframework.util.ObjectUtils;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfo;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 
 import cn.karelian.kas.KasApplication;
@@ -44,11 +46,11 @@ import cn.karelian.kas.utils.PageData;
 import cn.karelian.kas.utils.WebPageInfo;
 import cn.karelian.kas.views.FieldsInfoView;
 import cn.karelian.kas.views.Views;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Views> implements IDatabasesService {
-	private Logger logger = LoggerFactory.getLogger(DatabasesService.class);
-
 	@Autowired
 	private TableFieldsInfoService tableFieldsInfoService;
 
@@ -210,7 +212,7 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 				try {
 					Files.copy(fieldConfigPath, backupFieldsConfigPath, StandardCopyOption.REPLACE_EXISTING);
 				} catch (Exception e) {
-					logger.error("Failed to backup the fields config, details" + ExceptionUtil.getMessage(e));
+					log.error("Failed to backup the fields config, details" + ExceptionUtil.getMessage(e));
 					result.fail("备份配置失败，无法完成修改！");
 					throw new TransactionFailedException(result);
 				}
@@ -220,7 +222,7 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 				fileOutputStream.write(params.getFields_config().getBytes("utf-8"));
 				result.setSuccess(true);
 			} catch (Exception e) {
-				logger.error("Failed to write fields config, details: " + ExceptionUtil.getMessage(e));
+				log.error("Failed to write fields config, details: " + ExceptionUtil.getMessage(e));
 				result.fail("更新字段配置失败！");
 				throw new TransactionFailedException(result);
 			}
@@ -249,5 +251,36 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 		tableFieldsInfoService.reloadFieldsConfigs();
 
 		return new Result(true);
+	}
+
+	@Override
+	public String getFieldsConfig(Class<?> entityClszz) {
+		TableInfo tableInfo = TableInfoHelper.getTableInfo(entityClszz);
+		if (tableInfo == null) {
+			return null;
+		}
+
+		String viewName = tableInfo.getTableName();
+		var vlqw = Wrappers.<ViewsInfo>lambdaQuery()
+				.select(ViewsInfo::getFields_config)
+				.eq(ViewsInfo::getView_name, viewName);
+		ViewsInfo info = this.getOne(vlqw);
+
+		if (null == info || null == info.getFields_config()) {
+			return null;
+		}
+
+		Path fieldConfigPath = KasApplication.currentPath.resolve("data/configs").resolve(info.getFields_config());
+		if (!Files.exists(fieldConfigPath)) {
+			return null;
+		}
+
+		try (FileInputStream fileInputStream = new FileInputStream(fieldConfigPath.toFile())) {
+			String content = new String(fileInputStream.readAllBytes(), "utf-8");
+			return content;
+		} catch (Exception e) {
+			log.error("Failed to read file `" + fieldConfigPath.toString() + "`, reason: " + e.getMessage());
+		}
+		return null;
 	}
 }

@@ -22,4 +22,6 @@ public interface IDatabasesService extends IService<ViewsInfo> {
 	public Result edit(Views params) throws TransactionFailedException;
 
 	public Result reloadFieldsInfo();
+
+	public String getFieldsConfig(Class<?> entityClszz);
 }
