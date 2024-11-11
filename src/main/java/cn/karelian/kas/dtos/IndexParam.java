@@ -28,6 +28,7 @@ public class IndexParam {
 	@StringValidate(minLen = 0, maxLen = 25)
 	public String searchKey;
 
+	@StringValidate(regex = "[a-zA-Z_]{2,}")
 	public String searchField;
 
 	@JsonIgnore

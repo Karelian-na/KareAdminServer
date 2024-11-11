@@ -4,8 +4,14 @@ import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+
 import cn.karelian.kas.Result;
+import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.entities.Logs;
+import cn.karelian.kas.exceptions.NullRequestException;
+import cn.karelian.kas.exceptions.IllegalAccessException;
+import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.mappers.LogsMapper;
 import cn.karelian.kas.services.interfaces.ILogsService;
 
@@ -19,6 +25,16 @@ import cn.karelian.kas.services.interfaces.ILogsService;
  */
 @Service
 public class LogsService extends KasService<LogsMapper, Logs, Logs> implements ILogsService {
+	@Override
+	public Result index(IndexParam params)
+			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
+
+		var lqw = Wrappers.lambdaQuery(Logs.class);
+		lqw.orderBy(true, false, Logs::getDate);
+
+		return super.index(params, lqw);
+	}
+
 	@Override
 	public Result delete(Integer[] ids) {
 		Result result = new Result();

@@ -8,12 +8,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-
 import cn.karelian.kas.Result;
 import cn.karelian.kas.annotations.Authorize;
 import cn.karelian.kas.dtos.IndexParam;
-import cn.karelian.kas.entities.Logs;
 import cn.karelian.kas.services.LogsService;
 
 /**
@@ -33,11 +30,7 @@ public class LogsController {
 	@Authorize
 	@GetMapping("/index")
 	public Result index(@ModelAttribute IndexParam params) throws Exception {
-
-		QueryWrapper<Logs> qw = new QueryWrapper<>();
-		qw.orderBy(true, false, "date");
-
-		return logsService.index(params, qw);
+		return logsService.index(params);
 	}
 
 	@Authorize

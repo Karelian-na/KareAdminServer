@@ -11,7 +11,6 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 
 import cn.karelian.kas.Result;
@@ -168,17 +167,17 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 	@Override
 	public Result index(IndexParam params)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
-		QueryWrapper<MenusView> qw = Wrappers.query();
-		qw.orderByAsc("pid").orderByAsc("type");
+		var lmqw = Wrappers.lambdaQuery(MenusView.class);
+		lmqw.orderByAsc(MenusView::getPid).orderByAsc(MenusView::getType);
 
 		PageData<MenusView> pageData = new PageData<>();
 		if (params.initPageSize == null) {
-			pageData.data = baseMapper.selectViewList(qw);
+			pageData.data = baseMapper.selectViewList(lmqw);
 			return new Result(true, pageData);
 		} else {
-			WebPageInfo<MenusView> info = super.getWebPageInfo(MenusView.class, qw);
+			WebPageInfo<MenusView> info = super.getWebPageInfo(MenusView.class, lmqw);
 			info.pageData = pageData;
-			info.pageData.data = baseMapper.selectViewList(qw);
+			info.pageData.data = baseMapper.selectViewList(lmqw);
 
 			LambdaQueryWrapper<Permissions> lqw = Wrappers
 					.lambdaQuery(Permissions.class)

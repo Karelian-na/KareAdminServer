@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 
@@ -149,14 +148,14 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 	@Override
 	public Result index(IndexParam params)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
-		QueryWrapper<UsermsgsView> qw = Wrappers.query();
+		var lqw = Wrappers.lambdaQuery(UsermsgsView.class);
 
 		Long uid = LoginInfomationUtil.getUserId();
 		Byte currentUserTopLevel = rolesMapper.getUserAssocRolesTopLevel(uid);
 
-		qw.notIn("id", LoginInfomationUtil.getUserId(), KasApplication.superAdminId)
-				.gt("max_role_level", currentUserTopLevel);
-		return super.index(params, qw);
+		lqw.notIn(UsermsgsView::getId, LoginInfomationUtil.getUserId(), KasApplication.superAdminId)
+				.gt(UsermsgsView::getMax_role_level, currentUserTopLevel);
+		return super.index(params, lqw);
 	}
 
 	@Override

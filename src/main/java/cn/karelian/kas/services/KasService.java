@@ -153,7 +153,11 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 		if (!ObjectUtils.isEmpty(params.searchKey) && ObjectUtils.isEmpty(params.searchField)) {
 			return Result.fieldError("searchField", FieldErrors.EMPTY);
 		} else if (!ObjectUtils.isEmpty(params.searchKey)) {
-			((QueryWrapper<V>) qw).like(params.searchField, params.searchKey);
+			if (qw instanceof LambdaQueryWrapper) {
+				((LambdaQueryWrapper<V>) qw).apply(params.searchField + " LIKE {0}", "%" + params.searchKey + "%");
+			} else {
+				((QueryWrapper<V>) qw).like(params.searchField, params.searchKey);
+			}
 		}
 
 		if (params.pageIdx == null) {
