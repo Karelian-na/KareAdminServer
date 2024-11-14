@@ -23,16 +23,28 @@
 	</sql>
 
 	<select id="getAuthorizedOperationPermissions" resultType="cn.karelian.kas.utils.OperButton" parameterType="cn.karelian.kas.views.MenusView">
-		SELECT icon, name As title, url As action, oper_type
+		SELECT 
+			m1.icon,
+			m1.name As title,
+			(CASE WHEN m1.url IS NOT NULL THEN 
+					m1.url
+				WHEN m2.url IS NOT NULL THEN
+					m2.url
+				ELSE
+					null
+				END
+			) As action,
+			m1.oper_type
 		FROM (
 			<include refid="authorizedPids"></include>
 		) AS temp
-		LEFT JOIN menus_view ON temp.mid = menus_view.id
+		LEFT JOIN menus_view AS m1 ON temp.mid = m1.id
+		LEFT JOIN menus_view AS m2 ON m1.ref_id = m2.id
 		WHERE 
-			type = 4 AND
-			oper_type is not null AND
-			status = 1 AND
-			(menus_view.pid = #{menu.id} OR 
-			menus_view.pid = #{menu.pid})
+			m1.type = 4 AND
+			m1.oper_type is not null AND
+			m1.status = 1 AND
+			(m1.pid = #{menu.id} OR 
+			m1.pid = #{menu.pid})
 	</select>
 </mapper>
