@@ -32,7 +32,6 @@ const users = {
 		type: "text",
 		rule: __COMMON_FIELDS_CONFIGS__.requiredRule,
 		columnBindProps: {
-			showOverflowTooltip: false,
 			align: "left",
 		},
 	},

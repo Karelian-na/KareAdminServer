@@ -15,9 +15,7 @@ export default {
 		layoutSpan: 12,
 		type: "text",
 		columnBindProps: {
-			showOverflowTooltip: false,
 			align: "left",
-			minWidth: "200"
 		},
 	},
 	avatar: {

@@ -16,7 +16,6 @@ const specialMenuFieldsConfig = {
 		type: "text",
 		columnBindProps: {
 			className: "icon",
-			width: "60px",
 		},
 	},
 	type: {
@@ -26,9 +25,6 @@ const specialMenuFieldsConfig = {
 		bindProps: {
 			class: "type",
 			teleported: false,
-		},
-		columnBindProps: {
-			width: "100px",
 		},
 	},
 
@@ -48,7 +44,6 @@ const specialMenuFieldsConfig = {
 			className: "name",
 			fixed: "left",
 			align: "left",
-			minWidth: "200px",
 		},
 	},
 	pmid: {
@@ -75,9 +70,6 @@ const specialMenuFieldsConfig = {
 			"inline-prompt": true,
 			"active-text": "启用",
 			"inactive-text": "禁用",
-		},
-		columnBindProps: {
-			width: "80px",
 		},
 	},
 
@@ -129,8 +121,6 @@ const specialMenuFieldsConfig = {
 		],
 		columnBindProps: {
 			align: "left",
-			showOverflowTooltip: true,
-			minWidth: "300px",
 		},
 	},
 

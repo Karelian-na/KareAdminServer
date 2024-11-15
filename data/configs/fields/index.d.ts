@@ -163,7 +163,7 @@ export declare global {
 		 * @date 2023/09/08 20:19:09
 		 * @type {number}
 		 */
-		layoutSpan: number;
+		layoutSpan?: number;
 
 		/**
 		 * @description 当前字段的类型
@@ -188,6 +188,14 @@ export declare global {
 		 * @type {IEnumItem[]}
 		 */
 		enumItems?: Array<IEnumItem>;
+
+		/**
+		 * 字段类型 {@link EditItemType} = "enum" 时，编辑时候字段可供选择的值的集合
+		 *
+		 * @author Karelian_na
+		 * @date 2024/09/23 09:21:46
+		 */
+		tempEnumItems?: Array<IEnumItem>;
 
 		/**
 		 * @description 依赖本字段的字段
@@ -215,6 +223,70 @@ export declare global {
 	}
 
 	/**
+	 * 字段属性
+	 * @export
+	 * @interface IField
+	 */
+	export interface IField {
+		/**
+		 * 字段名
+		 * @type {string}
+		 * @memberof IField
+		 */
+		field_name: string;
+
+		/**
+		 * 是否展示在列表页
+		 * @type {boolean}
+		 * @memberof IField
+		 */
+		display: boolean;
+
+		/**
+		 * 展示在列表页面时，表格列名
+		 * @type {string}
+		 * @memberof IField
+		 */
+		display_name: string;
+
+		/**
+		 * 在列表页面展示的顺序
+		 * @type {number}
+		 * @memberof IField
+		 */
+		display_order: number;
+
+		/**
+		 * 是否可检索
+		 * @type {boolean}
+		 * @memberof IField
+		 */
+		searchable: boolean;
+
+		/**
+		 * 控制在编辑对话框中是否可编辑
+		 * @type {boolean}
+		 * @memberof IField
+		 */
+		editable: boolean;
+
+		/**
+		 * 控制在添加对话框中是否可编辑
+		 * @type {boolean}
+		 * @memberof IField
+		 */
+		editable_when_add: boolean;
+
+		/**
+		 * 字段的配置
+		 *
+		 * @author Karelian_na
+		 * @date 2024/09/23 18:38:48
+		 */
+		config: IFieldConfig;
+	}
+
+	/**
 	 * 字段配置集
 	 */
 	type FieldsConfig = Record<string, IFieldConfig>;
@@ -222,7 +294,7 @@ export declare global {
 	/**
 	 * 编辑、添加对话中决定字段是否显示的回调
 	 */
-	type FieldShowCallback = (mode: string) => boolean;
+	export type FieldShowCallback = (mode: string, field: IField, props: EditTemplateProps) => boolean;
 
 	const useFormData: () => Record<string, any>;
 
