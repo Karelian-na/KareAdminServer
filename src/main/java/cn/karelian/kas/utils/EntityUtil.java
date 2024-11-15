@@ -234,6 +234,18 @@ public class EntityUtil {
 			throw new RuntimeException("Failed to extract field name from function", e);
 		}
 	}
+
+	public static <T> T enumValueOf(Class<T> clszz, String value) {
+		int idx = Integer.valueOf(value);
+
+		var constants = clszz.getEnumConstants();
+		if (idx < 0 || idx > constants.length) {
+			throw new IllegalArgumentException(
+					"Failed to convert value `" + value + "` to enum type `" + clszz.getName() + "`!");
+		}
+
+		return constants[idx];
+	}
 }
 
 class AnnotationInvocationHandler<T extends Annotation, R> implements InvocationHandler {

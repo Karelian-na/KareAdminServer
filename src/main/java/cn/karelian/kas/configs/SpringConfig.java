@@ -8,10 +8,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.format.FormatterRegistry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -102,6 +104,17 @@ public class SpringConfig {
 	@Bean
 	WebMvcConfigurer webMvcConfigurer() {
 		return new WebMvcConfigurer() {
+
+			@Autowired
+			StringToEnumConverterFactory stringToEnumConverterFactory;
+
+			@Override
+			@SuppressWarnings("null")
+			public void addFormatters(FormatterRegistry registry) {
+				WebMvcConfigurer.super.addFormatters(registry);
+				registry.addConverterFactory(stringToEnumConverterFactory);
+			}
+
 			@Override
 			@SuppressWarnings("null")
 			public void addResourceHandlers(ResourceHandlerRegistry registry) {
