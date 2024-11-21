@@ -6,7 +6,7 @@
 			<if test="ew != null">${ew.sqlSelect}</if>
 			<if test="ew == null">*</if>
 		FROM users
-		WHERE id = #{id}
+		WHERE id = #{id} OR uid = #{uid}
 	</select>
 
 	<delete id="delete">

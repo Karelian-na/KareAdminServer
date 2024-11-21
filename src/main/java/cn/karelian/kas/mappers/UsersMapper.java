@@ -25,7 +25,7 @@ public interface UsersMapper extends KasMapper<Users, UsermsgsView> {
 	 * @param id 将要获取的用户的Id
 	 * @return
 	 */
-	public Users getUserWithLogicDelete(long id, @Param("ew") Wrapper<Users> ew);
+	public Users getUserWithLogicDelete(long id, String uid, @Param("ew") Wrapper<Users> ew);
 
 	/**
 	 * 删除给定用户Id的用户

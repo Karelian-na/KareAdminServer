@@ -192,14 +192,14 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 	@Transactional(rollbackFor = TransactionFailedException.class)
 	public Result add(UsermsgsView usermsgView) throws TransactionFailedException {
 		Result result = new Result();
-		Users old = this.baseMapper.getUserWithLogicDelete(usermsgView.getId(),
+		Users old = this.baseMapper.getUserWithLogicDelete(usermsgView.getId(), usermsgView.getUid(),
 				this.lambdaQuery().select(Users::getDeleted).getWrapper());
 
 		if (null != old) {
 			if (old.getDeleted()) {
 				result.setMsg("无法添加该用户，具有该Id的用户已被标记为删除的！");
 			} else {
-				result.setMsg("用户已存在！");
+				result.setMsg("具有该用户ID或用户名的用户已存在！");
 			}
 			return result;
 		}
