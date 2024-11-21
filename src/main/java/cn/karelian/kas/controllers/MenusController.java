@@ -13,12 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import cn.karelian.kas.Result;
 import cn.karelian.kas.annotations.Authorize;
+import cn.karelian.kas.annotations.Validate;
 import cn.karelian.kas.dtos.IndexParam;
-import cn.karelian.kas.entities.Menus;
 import cn.karelian.kas.exceptions.NullRequestException;
 import cn.karelian.kas.exceptions.IllegalAccessException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
 import cn.karelian.kas.services.MenusService;
+import cn.karelian.kas.utils.NonEmptyStrategy;
+import cn.karelian.kas.views.MenusView;
 
 /**
  * <p>
@@ -36,14 +38,15 @@ public class MenusController {
 
 	@Authorize
 	@GetMapping("/index")
-	public Result index(@ModelAttribute IndexParam params)
+	public Result index(@Validate @ModelAttribute IndexParam params)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
 		return menus.index(params);
 	}
 
 	@Authorize
 	@PutMapping("/edit")
-	public Result update(@RequestBody Menus menu) throws Exception {
+	public Result update(@Validate(nonEmptyStrategy = NonEmptyStrategy.EDIT) @RequestBody MenusView menu)
+			throws Exception {
 		return menus.update(menu);
 	}
 
@@ -55,7 +58,7 @@ public class MenusController {
 
 	@Authorize
 	@PostMapping("/add")
-	public Result add(@RequestBody Menus menu) throws Exception {
+	public Result add(@Validate(nonEmptyStrategy = NonEmptyStrategy.ADD) @RequestBody MenusView menu) throws Exception {
 		return menus.add(menu);
 	}
 }

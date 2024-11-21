@@ -2,6 +2,12 @@ package cn.karelian.kas.views;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 
+import cn.karelian.kas.annotations.GeneralValidate;
+import cn.karelian.kas.annotations.StringValidate;
+import cn.karelian.kas.entities.Menus.MenuType;
+import cn.karelian.kas.entities.Permissions.OperType;
+import cn.karelian.kas.utils.NonEmptyStrategy;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -25,54 +31,66 @@ public class MenusView implements Serializable {
 	/**
 	 * 菜单ID
 	 */
-	private Short id;
+	// private Short id;
+	private Integer id;
 
 	/**
 	 * 名称
 	 */
+	@StringValidate(nonEmptyStrategy = NonEmptyStrategy.ADD, minLen = 1, maxLen = 50)
 	private String name;
 
 	/**
 	 * 图标
 	 */
+	@StringValidate(minLen = 0, maxLen = 255)
 	private String icon;
 
 	/**
 	 * 类型
 	 */
-	private Byte type;
+	@GeneralValidate(nonEmptyStrategy = NonEmptyStrategy.ADD)
+	private MenuType type;
 
-	private Integer status;
+	/**
+	 * 操作方式，仅未关联权限时有效
+	 */
+	private OperType oper_type;
+
+	/**
+	 * 状态
+	 */
+	private Boolean status;
+
+	/**
+	 * 地址
+	 */
+	@StringValidate(minLen = 0, maxLen = 255)
+	private String url;
 
 	/**
 	 * 关联权限ID
 	 */
 	private Short pmid;
 
-	private String url;
-
 	/**
 	 * 备注
 	 */
+	@StringValidate(minLen = 0, maxLen = 100)
 	private String descrip;
 
 	/**
 	 * 父权限ID
 	 */
-	private Short pid;
+	private Integer pid;
 
 	/**
-	 * 引用页面ID
+	 * 默认页面id
 	 */
-	private Short ref_id;
+	private Integer ref_id;
 
 	/**
-	 * 操作方式
-	 */
-	private Byte oper_type;
-
-	/**
-	 * 姓名
+	 * 创建人
 	 */
 	private String add_user;
 

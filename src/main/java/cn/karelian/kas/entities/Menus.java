@@ -4,6 +4,11 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import cn.karelian.kas.entities.Permissions.OperType;
+import cn.karelian.kas.utils.EnumOrdinalSerializer;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -21,11 +26,16 @@ import lombok.Setter;
 @Setter
 public class Menus implements Serializable {
 
+	@JsonSerialize(using = EnumOrdinalSerializer.class)
+	public static enum MenuType {
+		NONE,
+		MENU,
+		ITEM,
+		PAGE,
+		OPER
+	};
+
 	private static final long serialVersionUID = 1L;
-	public static final byte TYPE_MENU = 1;
-	public static final byte TYPE_ITEM = 2;
-	public static final byte TYPE_PAGE = 3;
-	public static final byte TYPE_OPER = 4;
 
 	/**
 	 * 菜单ID
@@ -47,13 +57,13 @@ public class Menus implements Serializable {
 	/**
 	 * 类型
 	 */
-	private Byte type;
+	private MenuType type;
 
 	/**
 	 * 操作方式，仅未关联权限时有效
 	 */
 	@TableField(fill = FieldFill.INSERT_UPDATE)
-	private Byte oper_type;
+	private OperType oper_type;
 
 	/**
 	 * 状态

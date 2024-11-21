@@ -52,7 +52,7 @@ public class PermissionsService extends KasService<PermissionsMapper, Permission
 
 	@Override
 	public boolean isAuthorized(MenusView menu) throws NullRequestException {
-		if (0 == menu.getStatus()) {
+		if (!menu.getStatus()) {
 			return false;
 		}
 
@@ -86,7 +86,7 @@ public class PermissionsService extends KasService<PermissionsMapper, Permission
 			pageData.data = baseMapper.selectViewList(null);
 			return new Result(true, pageData);
 		} else {
-			WebPageInfo<PermissionsView> info = super.getWebPageInfo(PermissionsView.class, null);
+			WebPageInfo<PermissionsView> info = super.getWebPageInfo();
 			info.pageData = pageData;
 			info.pageData.data = baseMapper.selectViewList(null);
 			return new Result(true, info);

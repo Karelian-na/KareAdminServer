@@ -2,8 +2,9 @@ package cn.karelian.kas.views;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 
-import cn.karelian.kas.annotations.ComparableValidate;
+import cn.karelian.kas.annotations.GeneralValidate;
 import cn.karelian.kas.annotations.StringValidate;
+import cn.karelian.kas.entities.Permissions.OperType;
 import cn.karelian.kas.utils.NonEmptyStrategy;
 
 import java.io.Serializable;
@@ -51,17 +52,17 @@ public class PermissionsView implements Serializable {
 	/**
 	 * 备注
 	 */
-	@StringValidate(minLen = 0, maxLen = 100)
+	@StringValidate(minLen = 0, maxLen = 128)
 	private String descrip;
 
 	/**
 	 * 操作方式
 	 */
-	@ComparableValidate(nonEmptyStrategy = NonEmptyStrategy.ADD, min = 0, max = 3)
-	private Byte oper_type;
+	@GeneralValidate(nonEmptyStrategy = NonEmptyStrategy.ADD)
+	private OperType oper_type;
 
 	/**
-	 * 姓名
+	 * 创建人姓名
 	 */
 	private String add_user;
 

@@ -4,6 +4,7 @@ import java.util.List;
 
 import cn.karelian.kas.Result;
 import cn.karelian.kas.entities.Menus;
+import cn.karelian.kas.entities.Menus.MenuType;
 import cn.karelian.kas.exceptions.NullRequestException;
 import cn.karelian.kas.exceptions.UnLoginException;
 import cn.karelian.kas.utils.OperButton;
@@ -29,9 +30,9 @@ public interface IMenusService extends IKasService<Menus, MenusView> {
 	/**
 	 * @description: 获取指定权限id的权限的类型
 	 * @param {int} id
-	 * @return {byte}
+	 * @return {MenuType}
 	 */
-	public Byte getTypeById(int id);
+	public MenuType getTypeById(int id);
 
 	// /**
 	// * @description: 获取指定权限id的父权限的类型
@@ -49,11 +50,11 @@ public interface IMenusService extends IKasService<Menus, MenusView> {
 
 	/**
 	 * @description: 检测权限类型关联是否正确
-	 * @param {byte} pType 父权限的类型
-	 * @param {byte} curType 子权限的类型
+	 * @param {MenuType} pType 父权限的类型
+	 * @param {MenuType} curType 子权限的类型
 	 * @return {Boolean}
 	 */
-	public boolean checkTypeAssoc(byte pType, byte curType);
+	public boolean checkTypeAssoc(MenuType pType, MenuType curType);
 
 	/**
 	 * @description: 获取给定权限id的权限的层级
@@ -76,7 +77,7 @@ public interface IMenusService extends IKasService<Menus, MenusView> {
 	 * @param menu 将要修改的相关属性
 	 * @return
 	 */
-	public Result update(Menus menu);
+	public Result update(MenusView menu);
 
 	/**
 	 * 用给定变更来添加菜单
@@ -84,7 +85,7 @@ public interface IMenusService extends IKasService<Menus, MenusView> {
 	 * @param menu 将要添加的菜单
 	 * @return
 	 */
-	public Result add(Menus menu) throws NullRequestException;
+	public Result add(MenusView menu) throws NullRequestException;
 
 	/**
 	 * 删除指定Id的菜单

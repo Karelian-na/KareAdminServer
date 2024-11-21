@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import cn.karelian.kas.utils.EnumOrdinalSerializer;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -21,6 +24,14 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Permissions implements Serializable {
+
+	@JsonSerialize(using = EnumOrdinalSerializer.class)
+	public static enum OperType {
+		NONE, // 不可操作
+		BULK, // 仅可批量操作
+		COLUMN, // 仅可单独操作
+		ALL, // 即可批量又可单独操作
+	};
 
 	private static final long serialVersionUID = 1L;
 
@@ -53,10 +64,10 @@ public class Permissions implements Serializable {
 	/**
 	 * 操作方式
 	 */
-	private Byte oper_type;
+	private OperType oper_type;
 
 	/**
-	 * 创建人
+	 * 创建人ID
 	 */
 	@TableField(fill = FieldFill.INSERT)
 	private Long add_uid;

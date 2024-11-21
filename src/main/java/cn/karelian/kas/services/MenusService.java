@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestAttributes;
@@ -17,6 +18,8 @@ import cn.karelian.kas.Result;
 import cn.karelian.kas.dtos.IndexParam;
 import cn.karelian.kas.entities.Menus;
 import cn.karelian.kas.entities.Permissions;
+import cn.karelian.kas.entities.Menus.MenuType;
+import cn.karelian.kas.entities.Permissions.OperType;
 import cn.karelian.kas.exceptions.NullRequestException;
 import cn.karelian.kas.exceptions.IllegalAccessException;
 import cn.karelian.kas.exceptions.PermissionNotFoundException;
@@ -60,12 +63,14 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 	}
 
 	@Override
-	public Byte getTypeById(int id) {
+	public MenuType getTypeById(int id) {
 		LambdaQueryWrapper<Menus> lqw = new LambdaQueryWrapper<Menus>();
 		lqw.select(Menus::getType).eq(Menus::getId, id);
 		List<Object> objs = this.baseMapper.selectObjs(lqw);
 		if (objs.size() != 0) {
-			return (byte) ((Integer) objs.get(0)).intValue();
+			Integer typeNum = (Integer) objs.get(0);
+			var enums = MenuType.class.getEnumConstants();
+			return typeNum > enums.length ? null : enums[typeNum];
 		}
 		return null;
 	}
@@ -82,23 +87,22 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 	}
 
 	@Override
-	public boolean checkTypeAssoc(byte pType, byte curType) {
+	public boolean checkTypeAssoc(MenuType pType, MenuType curType) {
 		switch (pType) {
-			case 0:
-			case Menus.TYPE_MENU:
-				// if (curType == Menus.TYPE_MENU || curType == Menus.TYPE_ITEM) {
-				if (curType == Menus.TYPE_MENU || curType == Menus.TYPE_ITEM
-						|| curType == Menus.TYPE_OPER) { /// change
+			case NONE:
+			case MENU:
+				if (curType == MenuType.MENU || curType == MenuType.ITEM
+						|| curType == MenuType.OPER) { /// change
 					return true;
 				}
 				break;
-			case Menus.TYPE_ITEM:
-				if (curType == Menus.TYPE_PAGE || curType == Menus.TYPE_OPER) {
+			case ITEM:
+				if (curType == MenuType.PAGE || curType == MenuType.OPER) {
 					return true;
 				}
 				break;
-			case Menus.TYPE_PAGE:
-				if (curType == Menus.TYPE_OPER) {
+			case PAGE:
+				if (curType == MenuType.OPER) {
 					return true;
 				}
 				break;
@@ -190,7 +194,10 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 	}
 
 	@Override
-	public Result update(Menus menu) {
+	public Result update(MenusView param) {
+		Menus menu = new Menus();
+		BeanUtils.copyProperties(param, menu);
+
 		Result result = new Result();
 		if (EntityUtil.IsNonOrEmpty(menu, "id")) {
 			result.setMsg("修改内容为空！");
@@ -205,7 +212,7 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 
 		// set oper_type
 		if (menu.getOper_type() != null) {
-			if (oldMenu.getType() != Menus.TYPE_OPER) {
+			if (oldMenu.getType() != MenuType.OPER) {
 				result.setMsg("非操作类型的菜单不能设置操作方式！");
 				return result;
 			}
@@ -228,10 +235,10 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 			menu.setPid(null);
 		}
 
-		byte pType = 0;
+		MenuType pType = MenuType.NONE;
 		Integer pid = menu.getPid() == null ? oldMenu.getPid() : menu.getPid();
 		if (pid != null) {
-			Byte tempType = this.getTypeById(pid);
+			MenuType tempType = this.getTypeById(pid);
 			if (tempType == null) {
 				result.setMsg("关联父权限不存在！");
 				return result;
@@ -239,7 +246,7 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 			pType = tempType;
 		}
 
-		byte curType = menu.getType() != null ? menu.getType() : oldMenu.getType();
+		MenuType curType = menu.getType() != null ? menu.getType() : oldMenu.getType();
 		result.setSuccess(this.checkTypeAssoc(pType, curType));
 		if (!result.isSuccess()) {
 			result.setMsg("权限类型关联错误!");
@@ -322,7 +329,10 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 	}
 
 	@Override
-	public Result add(Menus menu) {
+	public Result add(MenusView param) {
+		Menus menu = new Menus();
+		BeanUtils.copyProperties(param, menu);
+
 		Result result = new Result();
 		if (menu.getUrl() != null) {
 			if (menu.getUrl().equals("")) {
@@ -350,15 +360,15 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 			return result;
 		}
 
-		Byte type = menu.getType();
-		Byte pType = null == menu.getPid() ? 0 : this.getTypeById(menu.getPid());
+		MenuType type = menu.getType();
+		MenuType pType = null == menu.getPid() ? MenuType.NONE : this.getTypeById(menu.getPid());
 		result.setSuccess(this.checkTypeAssoc(pType, type));
 		if (!result.isSuccess()) {
 			result.setMsg("权限关联错误!");
 			return result;
 		}
 
-		if (menu.getOper_type() != null && menu.getOper_type() == 0) {
+		if (menu.getOper_type() != null && menu.getOper_type() == OperType.NONE) {
 			menu.setOper_type(null);
 		}
 		if (menu.getPmid() != null && menu.getPmid() == 0) {
