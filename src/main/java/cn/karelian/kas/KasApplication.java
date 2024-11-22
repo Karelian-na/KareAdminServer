@@ -3,7 +3,6 @@ package cn.karelian.kas;
 import java.io.FileInputStream;
 import java.nio.file.Path;
 
-import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.mybatis.spring.annotation.MapperScan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,16 +11,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.system.ApplicationHome;
 import org.springframework.util.ObjectUtils;
 
-import com.baomidou.mybatisplus.core.MybatisConfiguration;
-import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import cn.karelian.kas.configs.KasConfig;
-import cn.karelian.kas.views.FieldsInfoView;
-import cn.karelian.kas.views.MenusView;
-import cn.karelian.kas.views.PermissionsView;
-import cn.karelian.kas.views.UsermsgsView;
-import cn.karelian.kas.views.Views;
 
 @SpringBootApplication
 @MapperScan({ "cn.karelian.kas.mappers.**" })
@@ -71,13 +63,6 @@ public class KasApplication {
 			logger.error(errorMessage);
 			System.exit(0);
 		}
-
-		MapperBuilderAssistant assistant = new MapperBuilderAssistant(new MybatisConfiguration(), "");
-		TableInfoHelper.initTableInfo(assistant, FieldsInfoView.class);
-		TableInfoHelper.initTableInfo(assistant, MenusView.class);
-		TableInfoHelper.initTableInfo(assistant, UsermsgsView.class);
-		TableInfoHelper.initTableInfo(assistant, Views.class);
-		TableInfoHelper.initTableInfo(assistant, PermissionsView.class);
 	}
 
 	public static void main(String[] args) {
