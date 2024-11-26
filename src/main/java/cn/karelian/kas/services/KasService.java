@@ -192,6 +192,7 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 
 			pageData.totalCount = page.getTotal();
 			pageData.curPageIdx = page.getCurrent();
+			pageData.pageSize = params.pageSize;
 			pageData.data = page.getRecords();
 
 			return new Result(true, pageData);
