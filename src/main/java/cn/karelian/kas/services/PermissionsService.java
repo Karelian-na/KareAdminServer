@@ -11,6 +11,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 
 import cn.karelian.kas.Result;
 import cn.karelian.kas.dtos.IndexParam;
+import cn.karelian.kas.dtos.IndexParam.IndexType;
 import cn.karelian.kas.entities.Permissions;
 import cn.karelian.kas.exceptions.NullRequestException;
 import cn.karelian.kas.exceptions.IllegalAccessException;
@@ -22,8 +23,6 @@ import cn.karelian.kas.mappers.UserRoleAssocMapper;
 import cn.karelian.kas.services.interfaces.IPermissionsService;
 import cn.karelian.kas.utils.EntityUtil;
 import cn.karelian.kas.utils.LoginInfomationUtil;
-import cn.karelian.kas.utils.PageData;
-import cn.karelian.kas.utils.WebPageInfo;
 import cn.karelian.kas.views.MenusView;
 import cn.karelian.kas.views.PermissionsView;
 
@@ -80,17 +79,8 @@ public class PermissionsService extends KasService<PermissionsMapper, Permission
 	@Override
 	public Result index(IndexParam params)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
-
-		PageData<PermissionsView> pageData = new PageData<>();
-		if (params.initPageSize == null) {
-			pageData.data = baseMapper.selectViewList(null);
-			return new Result(true, pageData);
-		} else {
-			WebPageInfo<PermissionsView> info = super.getWebPageInfo();
-			info.pageData = pageData;
-			info.pageData.data = baseMapper.selectViewList(null);
-			return new Result(true, info);
-		}
+		params.type = IndexType.All;
+		return super.index(params);
 	}
 
 	@Override
@@ -99,7 +89,13 @@ public class PermissionsService extends KasService<PermissionsMapper, Permission
 
 		boolean exists = this.lambdaQuery().eq(Permissions::getGuid, param.getGuid()).exists();
 		if (exists) {
-			result.fail("具有改标识的权限已存在！");
+			result.fail("具有该标识的权限已存在，无法重复添加！");
+			return result;
+		}
+
+		exists = this.lambdaQuery().eq(Permissions::getName, param.getName()).exists();
+		if (exists) {
+			result.fail("具有该名称的权限已存在，无法重复添加！");
 			return result;
 		}
 

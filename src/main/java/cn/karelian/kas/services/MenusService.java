@@ -16,6 +16,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 
 import cn.karelian.kas.Result;
 import cn.karelian.kas.dtos.IndexParam;
+import cn.karelian.kas.dtos.IndexParam.IndexType;
 import cn.karelian.kas.entities.Menus;
 import cn.karelian.kas.entities.Permissions;
 import cn.karelian.kas.entities.Menus.MenuType;
@@ -32,7 +33,6 @@ import cn.karelian.kas.services.interfaces.IMenusService;
 import cn.karelian.kas.utils.EntityUtil;
 import cn.karelian.kas.utils.LoginInfomationUtil;
 import cn.karelian.kas.utils.OperButton;
-import cn.karelian.kas.utils.PageData;
 import cn.karelian.kas.utils.WebPageInfo;
 import cn.karelian.kas.views.MenusView;
 
@@ -174,23 +174,21 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 		var lmqw = Wrappers.lambdaQuery(MenusView.class);
 		lmqw.orderByAsc(MenusView::getPid).orderByAsc(MenusView::getType);
 
-		PageData<MenusView> pageData = new PageData<>();
-		if (params.initPageSize == null) {
-			pageData.data = baseMapper.selectViewList(lmqw);
-			return new Result(true, pageData);
-		} else {
-			WebPageInfo<MenusView> info = super.getWebPageInfo(MenusView.class, lmqw);
-			info.pageData = pageData;
-			info.pageData.data = baseMapper.selectViewList(lmqw);
-
-			LambdaQueryWrapper<Permissions> lqw = Wrappers
-					.lambdaQuery(Permissions.class)
-					.select(Permissions::getName, Permissions::getId, Permissions::getGuid);
-			info.extraData = new HashMap<>();
-			info.extraData.put("permissions", permissionsMapper.selectMaps(lqw));
-
-			return new Result(true, info);
+		params.type = IndexType.All;
+		Result result = super.index(params, lmqw);
+		if (!result.isSuccess() || params.initPageSize == null) {
+			return result;
 		}
+
+		@SuppressWarnings("unchecked")
+		WebPageInfo<MenusView> info = result.getData(WebPageInfo.class);
+
+		LambdaQueryWrapper<Permissions> lqw = Wrappers
+				.lambdaQuery(Permissions.class)
+				.select(Permissions::getName, Permissions::getId, Permissions::getGuid);
+		info.extraData = new HashMap<>();
+		info.extraData.put("permissions", permissionsMapper.selectMaps(lqw));
+		return result;
 	}
 
 	@Override
@@ -354,9 +352,19 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 		}
 
 		Integer id = menu.getId();
-		long count = this.count(this.lambdaQuery().getWrapper().eq(Menus::getId, id));
-		if (count == 1) {
+		boolean isSameIdMenuExists = this.lambdaQuery().eq(Menus::getId, id).exists();
+		if (isSameIdMenuExists) {
 			result.setMsg("权限已存在!");
+			return result;
+		}
+
+		boolean isSiblingSameNameMenuExists = this.lambdaQuery()
+				.eq(menu.getPid() != null, Menus::getPid, menu.getPid())
+				.isNull(menu.getPid() == null, Menus::getPid)
+				.eq(Menus::getName, menu.getName())
+				.exists();
+		if (isSiblingSameNameMenuExists) {
+			result.setMsg("具有相同名称的同级菜单已存在，无法重复添加！");
 			return result;
 		}
 
