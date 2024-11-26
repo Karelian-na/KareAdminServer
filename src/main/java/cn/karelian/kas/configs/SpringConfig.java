@@ -24,6 +24,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 
 import cn.karelian.kas.KasApplication;
 import cn.karelian.kas.utils.CachedBodyHttpServletRequestWrapper;
+import cn.karelian.kas.utils.DateTimeUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,32 +65,35 @@ public class SpringConfig {
 			@Override
 			@SuppressWarnings("null")
 			public LocalDateTime convert(String str) {
-				return LocalDateTime.parse(str, DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+				return DateTimeUtil.parseDateTime(str);
 			}
 		};
 	}
 
 	@Bean
-	Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
+	Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer(
+			LocalDateTimeSerializer localDateTimeSerializer,
+			LocalDateTimeDeserializer localDateTimeDeserializer,
+			MultipartFileSerializer multipartFileSerializer) {
 		return builder -> builder
 				.serializationInclusion(JsonInclude.Include.NON_NULL)
-				.serializerByType(LocalDateTime.class, localDateTimeSerializer())
-				.serializerByType(MultipartFile.class, multipartFileSerializer())
-				.deserializerByType(LocalDateTime.class, localDateTimeDeserializer());
+				.serializerByType(LocalDateTime.class, localDateTimeSerializer)
+				.serializerByType(MultipartFile.class, multipartFileSerializer)
+				.deserializerByType(LocalDateTime.class, localDateTimeDeserializer);
 	}
 
 	@Bean
-	public LocalDateTimeSerializer localDateTimeSerializer() {
-		return new LocalDateTimeSerializer(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+	LocalDateTimeSerializer localDateTimeSerializer() {
+		return new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DateTimeUtil.dateTimePattern));
 	}
 
 	@Bean
-	public LocalDateTimeDeserializer localDateTimeDeserializer() {
-		return new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+	LocalDateTimeDeserializer localDateTimeDeserializer() {
+		return new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DateTimeUtil.dateTimePattern));
 	}
 
 	@Bean
-	public MultipartFileSerializer multipartFileSerializer() {
+	MultipartFileSerializer multipartFileSerializer() {
 		return new MultipartFileSerializer();
 	}
 
