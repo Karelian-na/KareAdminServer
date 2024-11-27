@@ -26,6 +26,7 @@ import cn.karelian.kas.annotations.GeneralValidate;
 import cn.karelian.kas.annotations.StringValidate;
 import cn.karelian.kas.annotations.Validate;
 import cn.karelian.kas.codes.FieldErrors;
+import cn.karelian.kas.dtos.IAdjustableParam;
 import cn.karelian.kas.exceptions.InvalidArgumentException;
 import cn.karelian.kas.exceptions.OperationNotAllowedException;
 import cn.karelian.kas.services.TableFieldsInfoService;
@@ -247,6 +248,10 @@ public class ValidateAspect {
 			logger.info("Validating field " + "    ".repeat(depth) + "`" + field.getName() + "` of object `"
 					+ clszz.getSimpleName() + "`");
 			validateField(field, obj, rule, fieldsEditableMap, depth + 1);
+		}
+
+		if (obj instanceof IAdjustableParam param) {
+			param.validateAndRegular();
 		}
 	}
 
