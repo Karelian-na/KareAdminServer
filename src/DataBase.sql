@@ -113,8 +113,9 @@ FLUSH PRIVILEGES;
 		editable BOOL DEFAULT FALSE COMMENT '是否可编辑',
 		editable_when_add BOOL DEFAULT NULL COMMENT '是否添加时可自定义',
 		field_name VARCHAR(50) NOT NULL COMMENT '字段名',
-		display_name VARCHAR(50) DEFAULT NULL COMMENT '展示名',
-		UNIQUE(table_name, field_name)
+		display_name VARCHAR(50) DEFAULT NULL COMMENT '展示名'
+		, FOREIGN KEY(table_name) REFERENCES views_info(view_name) ON UPDATE CASCADE ON DELETE CASCADE
+		, UNIQUE(table_name, field_name)
 	) AUTO_INCREMENT = 10000;
 
 	INSERT INTO table_fields_info VALUES(1, 'views', 0, 1, 1, 0, NULL, 'view_name', '视图名称');
@@ -185,28 +186,29 @@ FLUSH PRIVILEGES;
 -- 字段信息视图
 	CREATE OR REPLACE VIEW fields_info_view AS
 		SELECT
-			COLUMNS.TABLE_NAME as table_name,
-			COLUMNS.COLUMN_NAME as field_name,
-			(CASE 
-				WHEN table_fields_info.display_name IS NULL
-					THEN COLUMNS.COLUMN_COMMENT
+			table_fields_info.id
+			, views.view_name AS table_name
+			, COLUMNS.COLUMN_NAME AS field_name
+			, (CASE 
+				WHEN table_fields_info.display_name IS NULL THEN
+					COLUMNS.COLUMN_COMMENT
 				ELSE
 					table_fields_info.display_name
 				END
-			) AS display_name,
-			table_fields_info.display_order,
-			table_fields_info.display,
-			table_fields_info.searchable,
-			table_fields_info.editable,
-			table_fields_info.editable_when_add
-		FROM information_schema.`COLUMNS` COLUMNS
-		LEFT JOIN views ON COLUMNS.TABLE_NAME = views.view_name
-		LEFT JOIN table_fields_info ON CONCAT(COLUMNS.TABLE_NAME, COLUMNS.COLUMN_NAME) = CONCAT(table_fields_info.table_name, table_fields_info.field_name)
-		WHERE
-			COLUMNS.TABLE_SCHEMA = 'kas' AND
-			COLUMNS.TABLE_NAME NOT IN ("fields_info_view", "tables", "views_info") AND
-			COLUMNS.COLUMN_NAME <> "deleted"
-		ORDER BY COLUMNS.TABLE_NAME;
+			) AS display_name
+			, table_fields_info.display_order
+			, table_fields_info.display
+			, table_fields_info.searchable
+			, table_fields_info.editable
+			, table_fields_info.editable_when_add
+		FROM information_schema.`COLUMNS` AS COLUMNS
+		RIGHT JOIN views 
+			ON COLUMNS.TABLE_SCHEMA = 'ownos'
+			AND views.view_name = COLUMNS.TABLE_NAME
+		LEFT JOIN table_fields_info
+			ON COLUMNS.TABLE_NAME = table_fields_info.table_name
+			AND COLUMNS.COLUMN_NAME = table_fields_info.field_name
+		WHERE COLUMNS.COLUMN_NAME NOT IN ("deleted", "page_pos")
 
 -- 角色表
 	DROP TABLE IF EXISTS roles;
