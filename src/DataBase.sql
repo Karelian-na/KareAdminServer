@@ -209,6 +209,7 @@ FLUSH PRIVILEGES;
 			ON COLUMNS.TABLE_NAME = table_fields_info.table_name
 			AND COLUMNS.COLUMN_NAME = table_fields_info.field_name
 		WHERE COLUMNS.COLUMN_NAME NOT IN ("deleted", "page_pos")
+	;
 
 -- 角色表
 	DROP TABLE IF EXISTS roles;
