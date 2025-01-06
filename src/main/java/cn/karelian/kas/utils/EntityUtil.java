@@ -19,7 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.karelian.kas.codes.FieldErrors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class EntityUtil {
 	public static boolean IsNonOrEmpty(Object obj, String... ignores) {
 		if (obj == null) {
@@ -245,6 +247,38 @@ public class EntityUtil {
 		}
 
 		return constants[idx];
+	}
+
+	public static <T> T copyProperties(T source, T target, String... ignores) {
+		if (source == null || target == null) {
+			return target;
+		}
+
+		var ignoreFields = Arrays.asList(ignores);
+		var fields = getFieldsIncludeSuperClasses(target);
+		for (Field field : fields) {
+			if (Modifier.isStatic(field.getModifiers())) {
+				continue;
+			}
+
+			if (ignoreFields.indexOf(field.getName()) != -1) {
+				continue;
+			}
+
+			field.setAccessible(true);
+			try {
+				Object value = field.get(source);
+				if (value != null) {
+					field.set(target, value);
+				}
+			} catch (Exception e) {
+				String msg = "Error occurred when copy properties, class: " + source.getClass().getName() + ", field: "
+						+ field.getName() + ", reason: " + e.getMessage();
+				throw new RuntimeException(msg);
+			}
+		}
+
+		return target;
 	}
 }
 
