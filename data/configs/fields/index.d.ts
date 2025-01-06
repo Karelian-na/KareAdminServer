@@ -131,7 +131,8 @@ export declare global {
 		| "switch"
 		| "custom"
 		| "checkbox"
-		| "json";
+		| "json"
+		| "slider";
 
 	/**
 	 * @description 字段配置接口
