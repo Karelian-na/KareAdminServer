@@ -81,13 +81,13 @@ FLUSH PRIVILEGES;
 		FOREIGN KEY(update_uid) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT
 	) AUTO_INCREMENT = 100;
 
-	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(1, "logs", "系统访问日志记录表", "fields/logs.js");
-	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(2, "menus_view", "后台菜单表", "fields/menus_view.js");
-	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(3, "permissions_view", "权限表", "fields/permissions_view.js");
-	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(4, "roles", "角色表", "fields/roles.js");
-	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(5, "usermsgs_view", "用户信息表", "fields/usermsgs_view.js");
-	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(6, "deleted_usermsgs_view", "已删除/注销的用户信息表", "fields/deleted_usermsgs_view.js");
-	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(7, "views", "管理表字段的表", "fields/views.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(1, "logs", "系统访问日志记录表", "fields/$frames/logs.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(2, "menus_view", "后台菜单表", "fields/$frames/menus_view.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(3, "permissions_view", "权限表", "fields/$frames/permissions_view.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(4, "roles", "角色表", "fields/$frames/roles.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(5, "usermsgs_view", "用户信息表", "fields/$frames/usermsgs_view.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(6, "deleted_usermsgs_view", "已删除/注销的用户信息表", "fields/$frames/deleted_usermsgs_view.js");
+	INSERT INTO views_info(id, view_name, comment, fields_config) VALUES(7, "views", "管理表字段的表", "fields/$frames/views.js");
 
 -- 视图信息视图
 	CREATE OR REPLACE VIEW views AS

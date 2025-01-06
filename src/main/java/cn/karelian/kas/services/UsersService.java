@@ -168,7 +168,7 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 		}
 
 		String fieldsConfig = null;
-		Path userFieldsConfigPath = KasApplication.currentPath.resolve("data/configs/fields/usermsgs_view.js");
+		Path userFieldsConfigPath = KasApplication.currentPath.resolve(KasApplication.framesFieldsConfigPath + "usermsgs_view.js");
 		if (Files.exists(userFieldsConfigPath)) {
 			try (FileInputStream fileInputStream = new FileInputStream(userFieldsConfigPath.toString())) {
 				fieldsConfig = new String(fileInputStream.readAllBytes(), "utf-8");

@@ -148,7 +148,7 @@ public class GeneralService implements IGeneralService {
 		info.userMsg = usermsg;
 		info.menus = usersService.getBaseMapper().getAuthorizedMenus(uid);
 
-		Path commonFieldsConfigPath = KasApplication.currentPath.resolve("data/configs/fields/common.js");
+		Path commonFieldsConfigPath = KasApplication.currentPath.resolve(KasApplication.framesFieldsConfigPath + "common.js");
 		try (FileInputStream fileInputStream = new FileInputStream(commonFieldsConfigPath.toFile())) {
 			byte[] contents = fileInputStream.readAllBytes();
 			info.fieldsConfig = new String(contents, "utf-8");

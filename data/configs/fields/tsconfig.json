@@ -7,7 +7,7 @@
         "checkJs": true,
         "resolveJsonModule": true,
         "paths": {
-            "/configs/fields/common.js": [
+            "/configs/fields/$frames/common.js": [
                 "common"
             ],
         }

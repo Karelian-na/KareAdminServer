@@ -21,6 +21,7 @@ public class KasApplication {
 	public static final Path currentPath;
 
 	public static final long superAdminId = 999999L;
+	public static final String framesFieldsConfigPath = "data/configs/fields/$frames/";
 
 	// internal roles
 	public static final int superAdminRoleId = 1;
