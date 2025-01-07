@@ -228,7 +228,7 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 			}
 		} while (false);
 
-		var luw = Wrappers.<ViewsInfo>update().eq("view_name", params.getView_name());
+		var luw = Wrappers.<ViewsInfo>lambdaUpdate().eq(ViewsInfo::getView_name, params.getView_name());
 		MybatisPlusUtil.applyNonNullUpdateFields(viewInfo, luw);
 		result.setSuccess(this.saveOrUpdate(viewInfo, luw));
 		if (!result.isSuccess()) {

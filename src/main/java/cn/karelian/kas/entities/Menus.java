@@ -62,7 +62,6 @@ public class Menus implements Serializable {
 	/**
 	 * 操作方式，仅未关联权限时有效
 	 */
-	@TableField(fill = FieldFill.INSERT_UPDATE)
 	private OperType oper_type;
 
 	/**
@@ -73,13 +72,11 @@ public class Menus implements Serializable {
 	/**
 	 * 地址
 	 */
-	@TableField(fill = FieldFill.INSERT_UPDATE)
 	private String url;
 
 	/**
 	 * 关联权限ID
 	 */
-	@TableField(fill = FieldFill.INSERT_UPDATE)
 	private Short pmid;
 
 	/**
@@ -90,13 +87,11 @@ public class Menus implements Serializable {
 	/**
 	 * 父权限ID
 	 */
-	@TableField(fill = FieldFill.INSERT_UPDATE)
 	private Integer pid;
 
 	/**
 	 * 默认页面id
 	 */
-	@TableField(fill = FieldFill.INSERT_UPDATE)
 	private Integer ref_id;
 
 	/**

@@ -1,5 +1,6 @@
 package cn.karelian.kas.services;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.function.Consumer;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
@@ -32,6 +34,7 @@ import cn.karelian.kas.mappers.UserRoleAssocMapper;
 import cn.karelian.kas.services.interfaces.IMenusService;
 import cn.karelian.kas.utils.EntityUtil;
 import cn.karelian.kas.utils.LoginInfomationUtil;
+import cn.karelian.kas.utils.MybatisPlusUtil;
 import cn.karelian.kas.utils.OperButton;
 import cn.karelian.kas.utils.WebPageInfo;
 import cn.karelian.kas.views.MenusView;
@@ -194,7 +197,7 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 	@Override
 	public Result update(MenusView param) {
 		Menus menu = new Menus();
-		BeanUtils.copyProperties(param, menu);
+		BeanUtils.copyProperties(param, menu, "type", "ref_id");
 
 		Result result = new Result();
 		if (EntityUtil.IsNonOrEmpty(menu, "id")) {
@@ -204,59 +207,187 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 
 		Menus oldMenu = this.getById(menu.getId());
 		if (null == oldMenu) {
-			result.setMsg("权限不存在!");
+			result.setMsg("菜单不存在!");
 			return result;
 		}
 
-		// set oper_type
+		if (menu.getPmid() != null && oldMenu.getType() == MenuType.MENU) {
+			result.setMsg("非操作类型的菜单不能设置关联权限！");
+			return result;
+		}
+
+		// update target menu
+		var uw = Wrappers.<Menus>lambdaUpdate().eq(Menus::getId, menu.getId());
+
+		// if target menu type is MENU, then pmid and oper_type must be null
+		// the reason why ITEM and PAGE can set pmid and oper_type is that it can be a
+		// single menu that specify a url to display and query
+		if (menu.getPmid() != null) {
+			if (menu.getPmid() == 0) {
+				menu.setPmid(null);
+				if (oldMenu.getPmid() != null) {
+					uw.set(Menus::getPmid, null);
+				}
+			} else if (oldMenu.getOper_type() != null) {
+				param.setOper_type(OperType.NONE); // reutrn to client, to partial update
+			}
+
+			if (menu.getOper_type() != null && menu.getOper_type() != OperType.NONE) {
+				result.fail("关联权限时，不能设置操作类型！");
+				return result;
+			}
+		}
 		if (menu.getOper_type() != null) {
+			if (menu.getOper_type() == OperType.NONE) {
+				menu.setOper_type(null);
+				if (oldMenu.getOper_type() != null) {
+					uw.set(Menus::getOper_type, null);
+				}
+			}
+
 			if (oldMenu.getType() != MenuType.OPER) {
-				result.setMsg("非操作类型的菜单不能设置操作方式！");
+				result.fail("非操作类型的菜单不能设置操作方式！");
 				return result;
 			}
-			// unset associated permission, pmid = 0
-			if (menu.getPmid() != null && menu.getPmid() == 0) {
-			}
-			// pmid != 0
-			else if (menu.getPmid() != null || oldMenu.getPmid() != null) {
-				result.setMsg("关联权限时，不能设置操作类型！");
+
+			if (menu.getPmid() == null && oldMenu.getPmid() != null) {
+				result.fail("关联权限时，不能设置操作类型！");
 				return result;
 			}
-		} else {
-			menu.setOper_type(menu.getPmid() != null ? null : oldMenu.getOper_type());
 		}
 
-		if (menu.getPmid() == null || menu.getPmid() == 0) {
-			menu.setPmid(menu.getPmid() != null ? null : oldMenu.getPmid());
-		}
-		if (menu.getPid() != null && menu.getPid() == 0) {
-			menu.setPid(null);
-		}
-
-		MenuType pType = MenuType.NONE;
-		Integer pid = menu.getPid() == null ? oldMenu.getPid() : menu.getPid();
-		if (pid != null) {
-			MenuType tempType = this.getTypeById(pid);
-			if (tempType == null) {
-				result.setMsg("关联父权限不存在！");
+		// check the target menu and its parent menu type association;
+		// check the target menu and its parent menu circular relationship
+		if (menu.getPid() != null) {
+			MenuType pType = MenuType.NONE;
+			if (menu.getPid() != 0) {
+				MenuType tempType = this.getTypeById(menu.getPid());
+				if (tempType == null) {
+					result.setMsg("关联父权限不存在！");
+					return result;
+				}
+				pType = tempType;
+			} else {
+				uw.set(Menus::getPid, null);
+				menu.setPid(null);
+			}
+			MenuType curType = menu.getType() != null ? menu.getType() : oldMenu.getType();
+			result.setSuccess(this.checkTypeAssoc(pType, curType));
+			if (!result.isSuccess()) {
+				result.setMsg("权限类型关联错误!");
 				return result;
 			}
-			pType = tempType;
+
+			// circular relationship check
+			result.setSuccess(!this.hasCircularRelationship(menu.getId(), menu.getPid()));
+			if (!result.isSuccess()) {
+				result.setMsg("父子权限关联错误!");
+				return result;
+			}
 		}
 
-		MenuType curType = menu.getType() != null ? menu.getType() : oldMenu.getType();
-		result.setSuccess(this.checkTypeAssoc(pType, curType));
-		if (!result.isSuccess()) {
-			result.setMsg("权限类型关联错误!");
-			return result;
+		// if update url isn't empty, first find whether the url exists
+		// if exists, set ref_id to the url's id and set url to null
+		// if not exists, set ref_id to null and set url to the target menu
+		while (menu.getUrl() != null) {
+			if (!menu.getUrl().equals("")) {
+				Integer refMenuId = this.getObj(this.lambdaQuery()
+						.select(Menus::getId)
+						.eq(Menus::getUrl, menu.getUrl()).getWrapper(), v -> (Integer) v);
+				if (refMenuId != null) {
+					menu.setUrl(null);
+					menu.setRef_id(refMenuId);
+					if (oldMenu.getUrl() != null) {
+						uw.set(Menus::getUrl, null);
+					}
+
+					// reutrn to client, to partial update
+					param.setUrl("");
+					param.setRef_id(refMenuId);
+					break;
+				}
+			} else {
+				menu.setUrl(null);
+				if (oldMenu.getUrl() != null) {
+					uw.set(Menus::getUrl, null);
+				}
+			}
+
+			if (oldMenu.getRef_id() != null) {
+				uw.set(Menus::getRef_id, null);
+				param.setRef_id(0); // reutrn to client, to partial update
+			}
+			break;
 		}
 
-		result.setSuccess(!this.hasCircularRelationship(menu.getId(), pid));
-		if (!result.isSuccess()) {
-			result.setMsg("父子权限关联错误!");
-			return result;
+		// if update status, update all children status, if status is true, update its
+		// all parent status
+		if (menu.getStatus() != null) {
+			// whether update status is true or false, all children status should be
+			// updated, so first find all children and add its id to updateMenuStatusIds
+			LambdaQueryWrapper<Menus> qw = new LambdaQueryWrapper<>();
+			qw.select(Menus::getId, Menus::getPid)
+					.eq(Menus::getStatus, !menu.getStatus())
+					.eq(Menus::getPid, menu.getId());
+
+			List<Integer> updateMenuStatusIds = new ArrayList<>();
+			updateMenuStatusIds.add(menu.getId());
+
+			// recursive find all children and add its id to updateMenuStatusIds
+			func = (Menus child) -> {
+				updateMenuStatusIds.add(child.getId());
+
+				qw.clear();
+				qw.select(Menus::getId, Menus::getPid)
+						.eq(Menus::getPid, child.getId());
+
+				this.list(qw).forEach(func);
+			};
+			this.list(qw).forEach(func);
+
+			// if update status is true, find all parent and add its id to
+			// updateMenuStatusIds until find a parent which status is true
+			Menus temp = menu;
+			temp.setPid(menu.getPid() != null ? menu.getPid() : oldMenu.getPid());
+			while (temp != null && temp.getStatus()) {
+				qw.clear();
+				qw.select(Menus::getId, Menus::getPid, Menus::getStatus)
+						.eq(Menus::getStatus, false)
+						.eq(Menus::getId, temp.getPid());
+
+				temp = this.getOne(qw);
+				if (temp != null) {
+					updateMenuStatusIds.add(temp.getId());
+				}
+			}
+
+			// update all menus' status
+			var bluw = Wrappers.lambdaUpdate(Menus.class)
+					.set(Menus::getStatus, menu.getStatus())
+					.set(Menus::getUpdate_time, LocalDateTime.now())
+					.in(Menus::getId, updateMenuStatusIds);
+			menu.setStatus(null);
+			result.setSuccess(this.update(bluw));
 		}
 
+		// update target menu
+		if (MybatisPlusUtil.applyNonNullUpdateFields(menu, uw, Menus::getId) || !ObjectUtils.isEmpty(uw.getSqlSet())) {
+			result.setSuccess(this.update(uw));
+		}
+
+		result.setData(param);
+		return result;
+	}
+
+	@Override
+	public Result add(MenusView param) {
+		Result result = new Result();
+		Menus menu = new Menus();
+		BeanUtils.copyProperties(param, menu, "id");
+
+		// if update url isn't empty, first find whether the url exists
+		// if exists, set ref_id to the url's id and set url to null
+		// if not exists, set ref_id to null and set url to the target menu
 		if (menu.getUrl() != null) {
 			if (!menu.getUrl().equals("")) {
 				Integer refMenuId = this.getObj(this.lambdaQuery()
@@ -265,97 +396,14 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 				if (refMenuId != null) {
 					menu.setUrl(null);
 					menu.setRef_id(refMenuId);
-				} else {
-					menu.setRef_id(null);
 				}
 			} else {
 				menu.setUrl(null);
-				if (oldMenu.getRef_id() != null) {
-					menu.setRef_id(menu.getRef_id());
-				}
-			}
-		} else {
-			menu.setUrl(oldMenu.getUrl());
-			menu.setRef_id(oldMenu.getRef_id());
-		}
-
-		if (menu.getStatus() != null) {
-			LambdaQueryWrapper<Menus> qw = new LambdaQueryWrapper<>();
-			qw.select(Menus::getId, Menus::getPid)
-					.eq(Menus::getPid, menu.getId());
-
-			List<Menus> revising = new ArrayList<>();
-			revising.add(menu);
-
-			func = (Menus child) -> {
-				child.setStatus(menu.getStatus());
-				revising.add(child);
-
-				qw.clear();
-				qw.select(Menus::getId, Menus::getPid)
-						.eq(Menus::getPid, child.getId());
-
-				List<Menus> children = this.list(qw);
-
-				if (children.size() != 0) {
-					children.forEach(func);
-				}
-			};
-			this.list(qw).forEach(func);
-
-			Menus temp = menu;
-			if (menu.getStatus()) {
-				while (true) {
-					qw.clear();
-					qw.select(Menus::getId, Menus::getPid, Menus::getStatus)
-							.eq(Menus::getId, temp.getPid());
-
-					temp = this.getOne(qw);
-					if (temp == null || temp.getStatus()) {
-						break;
-					}
-					temp.setStatus(true);
-					revising.add(temp);
-				}
-			}
-
-			result.setSuccess(this.updateBatchById(revising));
-		} else {
-			result.setSuccess(this.updateById(menu));
-		}
-		return result;
-	}
-
-	@Override
-	public Result add(MenusView param) {
-		Menus menu = new Menus();
-		BeanUtils.copyProperties(param, menu);
-
-		Result result = new Result();
-		if (menu.getUrl() != null) {
-			if (menu.getUrl().equals("")) {
-				menu.setUrl(null);
-			} else {
-				LambdaQueryWrapper<Menus> lqw = Wrappers.lambdaQuery(Menus.class);
-				lqw.select(Menus::getId).eq(Menus::getUrl, menu.getUrl());
-
-				Integer refMenuId = this.getObj(lqw, v -> (Integer) v);
-				if (refMenuId != null) {
-					menu.setUrl(null);
-					menu.setRef_id(refMenuId);
-				}
 			}
 		}
 
 		if (menu.getPid() != null && menu.getPid() == 0) {
 			menu.setPid(null);
-		}
-
-		Integer id = menu.getId();
-		boolean isSameIdMenuExists = this.lambdaQuery().eq(Menus::getId, id).exists();
-		if (isSameIdMenuExists) {
-			result.setMsg("权限已存在!");
-			return result;
 		}
 
 		boolean isSiblingSameNameMenuExists = this.lambdaQuery()
@@ -364,30 +412,59 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 				.eq(Menus::getName, menu.getName())
 				.exists();
 		if (isSiblingSameNameMenuExists) {
-			result.setMsg("具有相同名称的同级菜单已存在，无法重复添加！");
+			result.fail("具有相同名称的同级菜单已存在，无法重复添加！");
 			return result;
 		}
 
+		Menus parentMenu = null;
+		if (menu.getPid() != null) {
+			parentMenu = this.getById(menu.getPid());
+			if (parentMenu == null) {
+				result.fail("指定添加的父菜单不存在！");
+				return result;
+			}
+		}
+
+		// check the target menu and its parent menu type association
 		MenuType type = menu.getType();
-		MenuType pType = null == menu.getPid() ? MenuType.NONE : this.getTypeById(menu.getPid());
+		MenuType pType = parentMenu == null ? MenuType.NONE : parentMenu.getType();
 		result.setSuccess(this.checkTypeAssoc(pType, type));
 		if (!result.isSuccess()) {
 			result.setMsg("权限关联错误!");
 			return result;
 		}
 
-		if (menu.getOper_type() != null && menu.getOper_type() == OperType.NONE) {
-			menu.setOper_type(null);
+		// if target menu type is MENU, then pmid and oper_type must be null
+		// the reason why ITEM and PAGE can set pmid and oper_type is that it can be a
+		// single menu that specify a url to display and query
+		if (menu.getPmid() != null) {
+			if (menu.getPmid() == 0) {
+				menu.setPmid(null);
+			} else if (menu.getType() == MenuType.MENU) {
+				result.fail("菜单类型的菜单不能设置关联权限！");
+				return result;
+			}
+
+			if (menu.getOper_type() != null && menu.getOper_type() != OperType.NONE) {
+				result.fail("关联权限时，不能设置操作类型！");
+				return result;
+			}
 		}
-		if (menu.getPmid() != null && menu.getPmid() == 0) {
-			menu.setPmid(null);
+
+		if (menu.getOper_type() != null) {
+			if (menu.getOper_type() == OperType.NONE) {
+				menu.setOper_type(null);
+			} else if (menu.getType() == MenuType.OPER) {
+				result.fail("非操作类型的菜单不能设置操作方式！");
+				return result;
+			}
 		}
+
 		result.setSuccess(this.save(menu));
 		if (result.isSuccess()) {
 			result.setData(menu);
 		}
 		return result;
-
 	}
 
 	@Override

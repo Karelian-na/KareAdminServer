@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.reflection.property.PropertyNamer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -224,14 +225,8 @@ public class EntityUtil {
 
 			SerializedLambda serializedLambda = (SerializedLambda) writeReplace.invoke(function);
 
-			String methodName = serializedLambda.getImplMethodName();
-			if (methodName.startsWith("get")) {
-				methodName = methodName.substring(3);
-			} else if (methodName.startsWith("is")) {
-				methodName = methodName.substring(2);
-			}
-
-			return Character.toLowerCase(methodName.charAt(0)) + methodName.substring(1);
+			String name = PropertyNamer.methodToProperty(serializedLambda.getImplMethodName());
+			return name;
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to extract field name from function", e);
 		}

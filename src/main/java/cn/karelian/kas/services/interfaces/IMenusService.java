@@ -49,9 +49,17 @@ public interface IMenusService extends IKasService<Menus, MenusView> {
 	public Integer getPidById(Integer id);
 
 	/**
-	 * @description: 检测权限类型关联是否正确
-	 * @param {MenuType} pType 父权限的类型
-	 * @param {MenuType} curType 子权限的类型
+	 * check the target menu and its parent menu type association
+	 * 
+	 * <p> rules are as follows:
+	 * <p> if parent menu is null, then target menu type can be MENU, ITEM;
+	 * <p> if parent menu is MENU, then target menu type can be MENU, ITEM, OPER;
+	 * <p> if parent menu is ITEM, then target menu type can be PAGE, OPER;
+	 * <p> if parent menu is PAGE, then target menu type can be OPER;
+	 * <p> OPER menu type can not have children;
+	 * 
+	 * @param {MenuType} pType the parent menu's type
+	 * @param {MenuType} curType the target menu's type
 	 * @return {Boolean}
 	 */
 	public boolean checkTypeAssoc(MenuType pType, MenuType curType);
