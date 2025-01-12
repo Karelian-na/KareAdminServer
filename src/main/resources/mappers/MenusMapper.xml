@@ -25,6 +25,7 @@
 	<select id="getAuthorizedOperationPermissions" resultType="cn.karelian.kas.utils.OperButton" parameterType="cn.karelian.kas.views.MenusView">
 		SELECT 
 			m1.icon,
+			m1.oper_id AS type,
 			m1.name As title,
 			(CASE WHEN m1.url IS NOT NULL THEN 
 					m1.url

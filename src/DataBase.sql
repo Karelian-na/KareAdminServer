@@ -163,12 +163,13 @@ FLUSH PRIVILEGES;
 	INSERT INTO table_fields_info VALUES(409, 'menus_view', 0, 0, 0, 1, 1, 'descrip', NULL);
 	INSERT INTO table_fields_info VALUES(410, 'menus_view', 0, 0, 0, 1, 1, 'icon', NULL);
 	INSERT INTO table_fields_info VALUES(411, 'menus_view', 0, 0, 0, 1, 1, 'oper_type', '操作类型');
+	INSERT INTO table_fields_info VALUES(412, 'menus_view', 0, 0, 0, 1, 1, 'oper_id', '操作标识');
 
 	INSERT INTO table_fields_info VALUES(501, 'permissions_view', 0, 1, 1, 0, 0, 'id', NULL);
 	INSERT INTO table_fields_info VALUES(502, 'permissions_view', 1, 1, 1, 1, 1, 'name', NULL);
 	INSERT INTO table_fields_info VALUES(503, 'permissions_view', 2, 1, 0, 1, 1, 'status', NULL);
-	INSERT INTO table_fields_info VALUES(504, 'permissions_view', 3, 0, 1, 1, 1, 'guid', NULL);
-	INSERT INTO table_fields_info VALUES(505, 'permissions_view', 4, 1, 0, 1, 1, 'oper_type', NULL);
+	INSERT INTO table_fields_info VALUES(504, 'permissions_view', 4, 1, 0, 1, 1, 'oper_type', NULL);
+	INSERT INTO table_fields_info VALUES(505, 'permissions_view', 3, 0, 1, 1, 1, 'oper_id', NULL);
 	INSERT INTO table_fields_info VALUES(506, 'permissions_view', 5, 1, 0, 0, 0, 'add_user', '添加人');
 	INSERT INTO table_fields_info VALUES(507, 'permissions_view', 6, 1, 0, 0, 0, 'add_time', NULL);
 	INSERT INTO table_fields_info VALUES(508, 'permissions_view', 7, 1, 0, 0, 0, 'update_time', NULL);
@@ -288,15 +289,14 @@ FLUSH PRIVILEGES;
 		id SMALLINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
 		name VARCHAR(50) NOT NULL COMMENT '名称',
 		status BOOL DEFAULT TRUE COMMENT '状态',
-		guid VARCHAR(128) NOT NULL COMMENT '唯一标识',
 		descrip VARCHAR(100) DEFAULT NULL COMMENT '备注',
 		oper_type TINYINT UNSIGNED DEFAULT NULL COMMENT '操作方式', -- 仅对type=oper时有效, 1代表只能批量操作, 2代表只能单一操作, 3代表既能批量也能单一操作, 
+		oper_id VARCHAR(32) NOT NULL COMMENT '操作标识',
  		add_uid BIGINT(12) UNSIGNED DEFAULT 999999 COMMENT '添加人',
 		add_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '添加时间',
 		update_time DATETIME ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 		
-		FOREIGN KEY(add_uid) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
-		INDEX(guid)
+		FOREIGN KEY(add_uid) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE
 		, UNIQUE(name)
 	) COMMENT '管理权限的表' AUTO_INCREMENT = 100;
 
@@ -306,9 +306,9 @@ FLUSH PRIVILEGES;
 			permissions.id,
 			permissions.name,
 			permissions.status,
-			permissions.guid,
 			permissions.descrip,
 			permissions.oper_type,
+			permissions.oper_id,
 			usermsgs.name AS add_user,
 			permissions.add_time,
 			permissions.update_time
@@ -324,6 +324,7 @@ FLUSH PRIVILEGES;
 		icon VARCHAR(255) DEFAULT NULL COMMENT '图标',
 		type TINYINT UNSIGNED NOT NULL COMMENT '类型', -- 1-菜单; 2-选项; 3-标签; 4-操作;
 		oper_type TINYINT UNSIGNED DEFAULT NULL COMMENT '操作类型',
+		oper_id VARCHAR(32) DEFAULT NULL COMMENT '操作标识',
 		status BOOL DEFAULT TRUE COMMENT '状态',
 		url VARCHAR(255) COMMENT '地址',
 		pmid SMALLINT UNSIGNED COMMENT '关联权限ID',
@@ -365,6 +366,11 @@ FLUSH PRIVILEGES;
 			ELSE
 				menus.oper_type
 			END) AS oper_type,
+			(CASE WHEN permissions.oper_id IS NOT NULL THEN
+				permissions.oper_id
+			ELSE
+				menus.oper_id
+			END) AS oper_id,
 			usermsgs.name AS add_user,
 			menus.add_time,
 			menus.update_time
@@ -397,40 +403,40 @@ FLUSH PRIVILEGES;
 		UNIQUE(uid, mid)
 	) COMMENT '用户权限关联表';
 
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (11, '菜单列表', 'adm_menus_index', NULL);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (12, '菜单添加', 'adm_menus_add', 3);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (13, '菜单编辑', 'adm_menus_edit', 2);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (14, '菜单删除', 'adm_menus_delete', 2);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (11, '菜单列表', 'index', NULL);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (12, '菜单添加', 'add', 3);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (13, '菜单编辑', 'edit', 2);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (14, '菜单删除', 'delete', 2);
 	
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (15, '权限列表', 'adm_permissions_index', NULL);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (16, '权限添加', 'adm_permissions_add', 1);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (17, '权限编辑', 'adm_permissions_edit', 2);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (18, '权限删除', 'adm_permissions_delete', 2);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (15, '权限列表', 'index', NULL);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (16, '权限添加', 'add', 1);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (17, '权限编辑', 'edit', 2);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (18, '权限删除', 'delete', 2);
 
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (19, '用户列表', 'adm_users_index', NULL);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (20, '用户添加', 'adm_users_add', 1);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (21, '用户编辑', 'adm_users_edit', 2);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (22, '用户删除', 'adm_users_delete', 1);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (23, '重置用户密码', 'adm_users_reset', 1);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (24, '授权用户', 'adm_users_authorize', 2);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (25, '赋予用户角色', 'adm_users_assign', 1);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (19, '用户列表', 'index', NULL);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (20, '用户添加', 'add', 1);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (21, '用户编辑', 'edit', 2);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (22, '用户删除', 'delete', 1);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (23, '重置用户密码', 'reset', 1);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (24, '授权用户', 'authorize', 2);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (25, '赋予用户角色', 'assign', 1);
 
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (26, '删除/注销用户列表', 'adm_users_deleted_index', NULL);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (27, '注销/删除用户恢复', 'adm_users_restore', 3);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (28, '永久删除用户', 'adm_users_delete_permanently', 3);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (26, '删除/注销用户列表', 'index', NULL);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (27, '注销/删除用户恢复', 'restore', 3);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (28, '永久删除用户', 'delete', 3);
 
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (29, '角色列表', 'adm_roles_index', NULL);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (30, '添加角色', 'adm_roles_add', 1);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (31, '编辑角色', 'adm_roles_edit', 2);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (32, '删除角色', 'adm_roles_delete', 2);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (33, '授权角色', 'adm_roles_authorize', 2);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (29, '角色列表', 'index', NULL);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (30, '添加角色', 'add', 1);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (31, '编辑角色', 'edit', 2);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (32, '删除角色', 'delete', 2);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (33, '授权角色', 'authorize', 2);
 
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (34, '数据库列表', 'adm_databases_index', NULL);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (35, '数据库管理', 'adm_databases_edit', 2);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (36, '重载字段配置', 'adm_databases_reload', 1);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (34, '数据库列表', 'index', NULL);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (35, '数据库管理', 'edit', 2);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (36, '重载字段配置', 'reload', 1);
 
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (37, '日志列表', 'adm_logs_index', NULL);
-	INSERT INTO `permissions`(id, name, guid, oper_type) VALUES (38, '删除日志', 'adm_logs_delete', 1);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (37, '日志列表', 'index', NULL);
+	INSERT INTO `permissions`(id, name, oper_id, oper_type) VALUES (38, '删除日志', 'delete', 1);
 
 -- 菜单插入
 	CREATE TRIGGER `on_menu_insert` AFTER INSERT ON `menus` 

@@ -47,7 +47,7 @@ public class PermissionsView implements Serializable {
 	 * 唯一标识
 	 */
 	@StringValidate(nonEmptyStrategy = NonEmptyStrategy.ADD, minLen = 2, maxLen = 128)
-	private String guid;
+	private String oper_id;
 
 	/**
 	 * 备注

@@ -54,7 +54,7 @@ public class Permissions implements Serializable {
 	/**
 	 * 唯一标识
 	 */
-	private String guid;
+	private String oper_id;
 
 	/**
 	 * 备注

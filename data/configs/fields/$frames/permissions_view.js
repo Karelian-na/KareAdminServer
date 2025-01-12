@@ -10,7 +10,7 @@ const specialPermissionsFieldsConfig = {
 		rule: __COMMON_FIELDS_CONFIGS__.requiredRule,
 	},
 
-	guid: {
+	oper_id: {
 		type: "text",
 		layoutSpan: 24,
 		rule: __COMMON_FIELDS_CONFIGS__.requiredRule,

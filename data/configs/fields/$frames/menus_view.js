@@ -46,12 +46,18 @@ const specialMenuFieldsConfig = {
 			align: "left",
 		},
 	},
+
 	pmid: {
 		layoutSpan: 24,
 		type: "enum",
 		bindProps: {
 			filterable: true,
 		},
+	},
+
+	oper_id: {
+		layoutSpan: 24,
+		type: "text",
 	},
 
 	oper_type: {

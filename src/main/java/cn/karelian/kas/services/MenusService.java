@@ -188,7 +188,7 @@ public class MenusService extends KasService<MenusMapper, Menus, MenusView> impl
 
 		LambdaQueryWrapper<Permissions> lqw = Wrappers
 				.lambdaQuery(Permissions.class)
-				.select(Permissions::getName, Permissions::getId, Permissions::getGuid);
+				.select(Permissions::getName, Permissions::getId, Permissions::getOper_id);
 		info.extraData = new HashMap<>();
 		info.extraData.put("permissions", permissionsMapper.selectMaps(lqw));
 		return result;

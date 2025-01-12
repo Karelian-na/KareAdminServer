@@ -87,13 +87,7 @@ public class PermissionsService extends KasService<PermissionsMapper, Permission
 	public Result add(PermissionsView param) throws NullRequestException {
 		Result result = new Result();
 
-		boolean exists = this.lambdaQuery().eq(Permissions::getGuid, param.getGuid()).exists();
-		if (exists) {
-			result.fail("具有该标识的权限已存在，无法重复添加！");
-			return result;
-		}
-
-		exists = this.lambdaQuery().eq(Permissions::getName, param.getName()).exists();
+		boolean exists = this.lambdaQuery().eq(Permissions::getName, param.getName()).exists();
 		if (exists) {
 			result.fail("具有该名称的权限已存在，无法重复添加！");
 			return result;

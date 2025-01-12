@@ -58,6 +58,11 @@ public class MenusView implements Serializable {
 	private OperType oper_type;
 
 	/**
+	 * 操作标识，仅未关联权限时有效
+	 */
+	private String oper_id;
+
+	/**
 	 * 状态
 	 */
 	private Boolean status;
