@@ -1,11 +1,13 @@
 package cn.karelian.kas.views;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import cn.karelian.kas.KasApplication;
 import cn.karelian.kas.annotations.ComparableValidate;
 import cn.karelian.kas.annotations.StringValidate;
+import cn.karelian.kas.configs.mybatis.NumericArrayTypeHandler;
 import cn.karelian.kas.utils.Constants;
 import cn.karelian.kas.utils.NonEmptyStrategy;
 
@@ -24,7 +26,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@TableName("usermsgs_view")
+@TableName(value = "usermsgs_view", autoResultMap = true)
 public class UsermsgsView implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -99,6 +101,12 @@ public class UsermsgsView implements Serializable {
 	 * 角色
 	 */
 	private String roles;
+
+	/**
+	 * 角色
+	 */
+	@TableField(typeHandler = NumericArrayTypeHandler.class)
+	private Byte[] roles_id;
 
 	/**
 	 * 最大角色级别

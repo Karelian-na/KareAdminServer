@@ -35,7 +35,6 @@ const users = {
 			align: "left",
 		},
 	},
-
 	gender: {
 		layoutSpan: 12,
 		type: "enum",
@@ -44,18 +43,34 @@ const users = {
 			{ value: 2, label: "女" },
 		],
 	},
+
 	age: {
 		layoutSpan: 12,
 		type: "text",
 	},
-
 	email: {
 		layoutSpan: 12,
 		type: "text",
 	},
+
 	phone: {
 		layoutSpan: 12,
 		type: "text",
+	},
+
+	roles: {
+		layoutSpan: 24,
+		type: "text",
+		show: (mode) => mode !== "add",
+	},
+
+	roles_id: {
+		layoutSpan: 24,
+		type: "enum",
+		show: (mode) => mode === "add",
+		bindProps: {
+			multiple: true,
+		},
 	},
 };
 
@@ -71,15 +86,6 @@ const specialFieldsConfig = {
 			limit: 1,
 			showFileList: false,
 		},
-	},
-
-	roles: {
-		layoutSpan: 12,
-		type: "text",
-		rule: __COMMON_FIELDS_CONFIGS__.requiredRule,
-		itemBindProps: {
-			label: "角色:"
-		}
 	},
 
 	political_status: {

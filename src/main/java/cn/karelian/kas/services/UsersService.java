@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.apache.tomcat.util.buf.HexUtils;
 import org.springframework.beans.BeanUtils;
@@ -47,6 +48,7 @@ import cn.karelian.kas.services.interfaces.IUsersService;
 import cn.karelian.kas.utils.EntityUtil;
 import cn.karelian.kas.utils.LocalStorageUtil;
 import cn.karelian.kas.utils.LoginInfomationUtil;
+import cn.karelian.kas.utils.WebPageInfo;
 import cn.karelian.kas.utils.LocalStorageUtil.AtomicMoveFileHandle;
 import cn.karelian.kas.views.MenusView;
 import cn.karelian.kas.views.UsermsgsView;
@@ -147,14 +149,32 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 	@Override
 	public Result index(IndexParam params)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
-		var lqw = Wrappers.lambdaQuery(UsermsgsView.class);
+
+		var rlqw = Wrappers.lambdaQuery(Roles.class);
+		if (params.initPageSize != null) {
+			rlqw.select(Roles::getId, Roles::getName, Roles::getLevel);
+		} else {
+			rlqw.select(Roles::getLevel);
+		}
 
 		Long uid = LoginInfomationUtil.getUserId();
-		Byte currentUserTopLevel = rolesMapper.getUserAssocRolesTopLevel(uid);
+		var assignableRoles = rolesMapper.getUserAssignableRolesForMap(uid, rlqw);
 
-		lqw.notIn(UsermsgsView::getId, LoginInfomationUtil.getUserId(), KasApplication.superAdminId)
-				.gt(UsermsgsView::getMax_role_level, currentUserTopLevel);
-		return super.index(params, lqw);
+		Byte topLevel = assignableRoles.stream().map(Roles::getLevel).min(Byte::compareTo)
+				.orElse((byte) KasApplication.commonUserRoleId);
+
+		var lqw = Wrappers.lambdaQuery(UsermsgsView.class)
+				.notIn(UsermsgsView::getId, LoginInfomationUtil.getUserId(), KasApplication.superAdminId)
+				.ge(UsermsgsView::getMax_role_level, topLevel);
+
+		Result result = super.index(params, lqw);
+		if (null != result && result.isSuccess() && params.initPageSize != null) {
+			@SuppressWarnings("unchecked")
+			WebPageInfo<UsermsgsView> info = (WebPageInfo<UsermsgsView>) result.getData();
+			info.extraData = Map.of("assignableRoles", assignableRoles);
+		}
+
+		return result;
 	}
 
 	@Override
@@ -212,6 +232,26 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 		if (!result.isSuccess()) {
 			result.setMsg("添加用户信息失败！");
 			throw new TransactionFailedException(result);
+		}
+
+		if (usermsgView.getRoles_id() != null && usermsgView.getRoles_id().length != 0) {
+			Long uid = LoginInfomationUtil.getUserId();
+			var rlqw = Wrappers.lambdaQuery(Roles.class).select(Roles::getId);
+			var assignableRoles = rolesMapper.getUserAssignableRolesForMap(uid, rlqw)
+					.stream().map(Roles::getId).toList();
+
+			if (Stream.of(usermsgView.getRoles_id()).anyMatch(v -> !assignableRoles.contains(v))) {
+				result.setMsg("初始指定的角色中包含了不允许分配的角色，无法完成添加！");
+				throw new TransactionFailedException(result);
+			}
+
+			Map<String, List<?>> paramMap = Map.of("uids", List.of(usermsgView.getId()), "rids",
+					List.of(usermsgView.getRoles_id()));
+			result.setSuccess(userRoleAssocMapper.insertBatchByUnionKey(paramMap));
+			if (!result.isSuccess()) {
+				result.setMsg("关联用户角色失败！");
+				throw new TransactionFailedException(result);
+			}
 		}
 
 		BeanUtils.copyProperties(user, usermsgView);

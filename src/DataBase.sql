@@ -151,6 +151,7 @@ FLUSH PRIVILEGES;
 	INSERT INTO table_fields_info VALUES(311, 'usermsgs_view', 0, 0, 0, 1, 1, 'gender', NULL);
 	INSERT INTO table_fields_info VALUES(312, 'usermsgs_view', 0, 0, 0, 1, 1, 'political_status', NULL);
 	INSERT INTO table_fields_info VALUES(313, 'usermsgs_view', 0, 0, 0, 1, 1, 'profile', NULL);
+	INSERT INTO table_fields_info VALUES(314, 'usermsgs_view', 0, 0, 0, 0, 1, 'roles', '角色');
 
 	INSERT INTO table_fields_info VALUES(401, 'menus_view', 0, 0, 0, 1, 1, 'pmid', '关联权限');
 	INSERT INTO table_fields_info VALUES(402, 'menus_view', 0, 0, 0, 1, 1, 'pid', '父菜单');
@@ -247,7 +248,8 @@ FLUSH PRIVILEGES;
 		SELECT
 			users.uid,
 			usermsgs.*,
-			GROUP_CONCAT(roles.name SEPARATOR ',') 'roles',
+			GROUP_CONCAT(roles.name SEPARATOR ',') AS 'roles',
+			GROUP_CONCAT(roles.id SEPARATOR ',') AS 'roles_id',
 			MIN(roles.level) AS max_role_level,
 			users.add_time,
 			REPLACE(users.bind_email, SUBSTR(users.bind_email, 4, 6), '*****') AS bind_email,

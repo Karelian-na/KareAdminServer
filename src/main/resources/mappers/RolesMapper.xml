@@ -21,13 +21,32 @@
 		FROM roles
 		<if test="uid != (@cn.karelian.kas.KasApplication@superAdminId)">
 			RIGHT JOIN user_role_assoc ON user_role_assoc.rid = roles.id
-			<where>
-				and user_role_assoc.uid = #{uid}
-			</where>
 		</if>
+		<where>
+			AND roles.id != ${@cn.karelian.kas.KasApplication@superAdminId}
+			<if test="uid != (@cn.karelian.kas.KasApplication@superAdminId)">
+				AND user_role_assoc.uid = #{uid}
+			</if>
+		</where>
 	</select>
 
-	<!-- getUserAssocRolesTopLevel --> 
+	<select id="getUserAssignableRolesForMap" resultType="cn.karelian.kas.entities.Roles">
+		SELECT 
+			<choose>
+				<when test="ew != null and ew.sqlSelect != null">${ew.sqlSelect}</when>
+				<otherwise>*</otherwise>
+			</choose>
+		FROM roles
+		LEFT JOIN user_role_assoc ON user_role_assoc.rid = roles.id AND user_role_assoc.uid = ${uid}
+		WHERE 
+			roles.id != ${@cn.karelian.kas.KasApplication@commonUserRoleId}
+			AND roles.level &gt; (
+				SELECT MIN(level)
+				FROM roles
+				RIGHT JOIN user_role_assoc ON user_role_assoc.rid = roles.id
+				WHERE uid = #{uid}
+			)
+	</select>
 
 	<select id="getUserAssocRolesTopLevel" resultType="Byte">
 		SELECT 
