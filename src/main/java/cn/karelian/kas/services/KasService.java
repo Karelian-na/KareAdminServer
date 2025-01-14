@@ -121,7 +121,7 @@ public class KasService<M extends KasMapper<E, V>, E, V> extends ServiceImpl<M, 
 
 		Views viewsInfo = viewsInfoMapper.selectViewOne(lqw);
 		if (null != viewsInfo) {
-			Path viewPath = KasApplication.currentPath.resolve("data/configs").resolve(viewsInfo.getFields_config());
+			Path viewPath = KasApplication.configPath.resolve(viewsInfo.getFields_config());
 			if (Files.exists(viewPath)) {
 				try (FileInputStream fileInputStream = new FileInputStream(viewPath.toString())) {
 					info.fieldsConfig = new String(fileInputStream.readAllBytes(), "utf-8");

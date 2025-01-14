@@ -3,9 +3,6 @@ package cn.karelian.kas.services;
 import jakarta.servlet.http.HttpSession;
 import lombok.Getter;
 
-import java.io.FileInputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -93,6 +90,8 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 	private RolesMapper rolesMapper;
 	@Autowired
 	private DeletedUsersMapper deletedUsersMapper;
+	@Autowired
+	DatabasesService databasesService;
 
 	@Override
 	@Transactional(rollbackFor = TransactionFailedException.class)
@@ -167,22 +166,13 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 			return result;
 		}
 
-		String fieldsConfig = null;
-		Path userFieldsConfigPath = KasApplication.currentPath.resolve(KasApplication.framesFieldsConfigPath + "usermsgs_view.js");
-		if (Files.exists(userFieldsConfigPath)) {
-			try (FileInputStream fileInputStream = new FileInputStream(userFieldsConfigPath.toString())) {
-				fieldsConfig = new String(fileInputStream.readAllBytes(), "utf-8");
-			} catch (Exception e) {
-			}
-		}
+		String fieldsConfig = databasesService.getFieldsConfig(UsermsgsView.class);
 		if (null == fieldsConfig) {
 			result.setMsg("获取配置信息失败！");
 			return result;
 		}
 
-		Map<String, Object> data = new HashMap<>();
-		data.put("data", msg);
-		data.put("fieldsConfig", fieldsConfig);
+		Map<String, Object> data = Map.of("data", msg, "fieldsConfig", fieldsConfig);
 		result.setData(data);
 		result.setSuccess(true);
 		return result;

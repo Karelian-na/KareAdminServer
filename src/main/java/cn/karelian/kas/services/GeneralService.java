@@ -1,6 +1,5 @@
 package cn.karelian.kas.services;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +38,8 @@ import cn.karelian.kas.views.UsermsgsView;
 public class GeneralService implements IGeneralService {
 	@Autowired
 	private UsersService usersService;
+	@Autowired
+	private DatabasesService databasesService;
 
 	@Override
 	public Result login(LoginParam params) {
@@ -148,11 +149,8 @@ public class GeneralService implements IGeneralService {
 		info.userMsg = usermsg;
 		info.menus = usersService.getBaseMapper().getAuthorizedMenus(uid);
 
-		Path commonFieldsConfigPath = KasApplication.currentPath.resolve(KasApplication.framesFieldsConfigPath + "common.js");
-		try (FileInputStream fileInputStream = new FileInputStream(commonFieldsConfigPath.toFile())) {
-			byte[] contents = fileInputStream.readAllBytes();
-			info.fieldsConfig = new String(contents, "utf-8");
-		} catch (Exception e) {
+		info.fieldsConfig = databasesService.getFieldsConfig(null);
+		if (info.fieldsConfig == null) {
 			result.setMsg("加载配置失败！");
 			return result;
 		}

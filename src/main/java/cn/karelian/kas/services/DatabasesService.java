@@ -98,7 +98,7 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 
 		result.setSuccess(true);
 		if (!ObjectUtils.isEmpty(view.getFields_config())) {
-			Path fieldConfigPath = KasApplication.currentPath.resolve("data/configs").resolve(view.getFields_config());
+			Path fieldConfigPath = KasApplication.configPath.resolve(view.getFields_config());
 			if (Files.exists(fieldConfigPath)) {
 				try (FileInputStream fileInputStream = new FileInputStream(fieldConfigPath.toFile())) {
 					String content = new String(fileInputStream.readAllBytes(), "utf-8");
@@ -204,7 +204,7 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 			} else {
 				strRelativePath = oldView.getFields_config();
 			}
-			Path fieldConfigPath = KasApplication.currentPath.resolve("data/configs").resolve(strRelativePath);
+			Path fieldConfigPath = KasApplication.configPath.resolve(strRelativePath);
 
 			if (Files.exists(fieldConfigPath)) {
 				String suffix = "." + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".bak";
@@ -255,22 +255,27 @@ public class DatabasesService extends KasService<ViewsInfoMapper, ViewsInfo, Vie
 
 	@Override
 	public String getFieldsConfig(Class<?> entityClszz) {
-		TableInfo tableInfo = TableInfoHelper.getTableInfo(entityClszz);
-		if (tableInfo == null) {
-			return null;
+		Path fieldConfigPath = null;
+		if (entityClszz == null) {
+			fieldConfigPath = KasApplication.configPath.resolve("fields/$frames/common.js");
+		} else {
+			TableInfo tableInfo = TableInfoHelper.getTableInfo(entityClszz);
+			if (tableInfo == null) {
+				return null;
+			}
+
+			String viewName = tableInfo.getTableName();
+			var vlqw = Wrappers.<ViewsInfo>lambdaQuery()
+					.select(ViewsInfo::getFields_config)
+					.eq(ViewsInfo::getView_name, viewName);
+			ViewsInfo info = this.getOne(vlqw);
+
+			if (null == info || null == info.getFields_config()) {
+				return null;
+			}
+
+			fieldConfigPath = KasApplication.configPath.resolve(info.getFields_config());
 		}
-
-		String viewName = tableInfo.getTableName();
-		var vlqw = Wrappers.<ViewsInfo>lambdaQuery()
-				.select(ViewsInfo::getFields_config)
-				.eq(ViewsInfo::getView_name, viewName);
-		ViewsInfo info = this.getOne(vlqw);
-
-		if (null == info || null == info.getFields_config()) {
-			return null;
-		}
-
-		Path fieldConfigPath = KasApplication.currentPath.resolve("data/configs").resolve(info.getFields_config());
 		if (!Files.exists(fieldConfigPath)) {
 			return null;
 		}

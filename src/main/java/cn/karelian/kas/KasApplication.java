@@ -19,9 +19,9 @@ import cn.karelian.kas.configs.KasConfig;
 @MapperScan({ "cn.karelian.kas.mappers.**" })
 public class KasApplication {
 	public static final Path currentPath;
+	public static final Path configPath;
 
 	public static final long superAdminId = 999999L;
-	public static final String framesFieldsConfigPath = "data/configs/fields/$frames/";
 
 	// internal roles
 	public static final int superAdminRoleId = 1;
@@ -43,10 +43,11 @@ public class KasApplication {
 			path = path.substring(0, path.length() - "/target".length());
 		}
 		currentPath = Path.of(path);
+		configPath = currentPath.resolve("data/configs/");
 
 		// 读取服务器配置
 		try {
-			Path serverConfigPath = KasApplication.currentPath.resolve("data/configs/server.json");
+			Path serverConfigPath = KasApplication.configPath.resolve("server.json");
 			FileInputStream fileInputStream = new FileInputStream(serverConfigPath.toFile());
 			ObjectMapper objectMapper = new ObjectMapper();
 			KasApplication.configs = objectMapper.readValue(fileInputStream, KasConfig.class);
