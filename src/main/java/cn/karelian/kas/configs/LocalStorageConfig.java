@@ -25,9 +25,6 @@ public class LocalStorageConfig implements BaseConfig {
 	/* 对外公网访问的 uri 前缀 */
 	public URI publicUriPrefix;
 
-	/* 对外公网访问的头像的 uri 前缀 */
-	public URI avatarUriPrefix;
-
 	/* 外网资源路径映射 */
 	public Map<String, String> publicResourcesPathMap;
 
@@ -81,16 +78,6 @@ public class LocalStorageConfig implements BaseConfig {
 		if (ObjectUtils.isEmpty(publicUriPrefix)) {
 			try {
 				publicUriPrefix = new URI(baseConfig.host);
-			} catch (Exception e) {
-				return e.getMessage();
-			}
-		}
-
-		if (ObjectUtils.isEmpty(avatarUriPrefix)) {
-			String strPublicUriPrefix = publicUriPrefix.toString();
-			String strPrefix = strPublicUriPrefix + (strPublicUriPrefix.endsWith("/") ? "images" : "/images");
-			try {
-				avatarUriPrefix = new URI(strPrefix);
 			} catch (Exception e) {
 				return e.getMessage();
 			}

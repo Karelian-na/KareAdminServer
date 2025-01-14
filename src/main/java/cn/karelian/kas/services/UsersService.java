@@ -225,8 +225,15 @@ public class UsersService extends KasService<UsersMapper, Users, UsermsgsView> i
 		Usermsgs usermsg = new Usermsgs();
 		BeanUtils.copyProperties(usermsgView, usermsg);
 		if (null == usermsg.getAvatar()) {
-			String avatarPrefix = KasApplication.configs.localStorageConfig.avatarUriPrefix.toString();
-			usermsg.setAvatar(avatarPrefix + "/2a952fddb374b962cbb0c60b3e79245d.png");
+			usermsg.setAvatar(KasApplication.configs.defaultAvatar);
+		} else {
+			AtomicMoveFileHandle handle = LocalStorageUtil.atomicMoveTempFiles(usermsg.getAvatar(), "image");
+			if (!handle.isSuccess()) {
+				result.fail("头像保存失败!");
+				throw new TransactionFailedException(result);
+			}
+
+			usermsg.setAvatar(handle.getPublicPaths()[0]);
 		}
 		result.setSuccess(usermsgsMapper.updateById(usermsg) == 1);
 		if (!result.isSuccess()) {

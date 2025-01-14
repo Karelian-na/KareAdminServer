@@ -3,6 +3,7 @@
 	"log": true,
 	"traceFields": ["User-Agent"],
 	"storageMode": "Local",
+	"defaultAvatar": "http://kas.karelian.cn:800/resources/images/2a952fddb374b962cbb0c60b3e79245d.png",
 	"localStorageConfig": {
 		"tempPath": "./data/temp",
 		"commonFilePath": "./data/files",
@@ -13,7 +14,6 @@
 			"image": "images"
 		},
 		"publicUriPrefix": "http://kas.karelian.cn:800/resources/",
-		"avatarUriPrefix": "http://kas.karelian.cn:800/resources/images",
 		"publicResourcesPathMap": {
 			"/files/**": "./data/files/",
 			"/images/**": "./data/images/"

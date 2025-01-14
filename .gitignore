@@ -31,3 +31,7 @@ build/
 
 /data/*
 !/data/configs
+
+!/data/images
+/data/images/*
+!/data/images/2a952fddb374b962cbb0c60b3e79245d.png

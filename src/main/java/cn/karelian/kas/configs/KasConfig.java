@@ -1,5 +1,6 @@
 package cn.karelian.kas.configs;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +38,9 @@ public class KasConfig implements BaseConfig {
 	// 资源存储模式
 	public StorageMode storageMode;
 
+	// 默认头像
+	public String defaultAvatar;
+
 	// 本地存储配置
 	public LocalStorageConfig localStorageConfig;
 
@@ -64,6 +68,13 @@ public class KasConfig implements BaseConfig {
 			String errorMessage = localStorageConfig.checkValidationAndRegularization(this);
 			if (!ObjectUtils.isEmpty(errorMessage)) {
 				return errorMessage;
+			}
+		}
+
+		if (!ObjectUtils.isEmpty(defaultAvatar)) {
+			URI uri = URI.create(defaultAvatar);
+			if (!uri.isAbsolute()) {
+				return "defaultAvatar should be an internet absolute uri!";
 			}
 		}
 
