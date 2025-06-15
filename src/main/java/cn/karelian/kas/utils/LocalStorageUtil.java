@@ -260,6 +260,9 @@ public final class LocalStorageUtil {
 		tempFileAttribute.extension = fileExtension;
 		tempFileAttribute.hash = fileHash;
 
+		dotIdx = uploadedPath.lastIndexOf(".");
+		tempFileAttribute.sha512 = dotIdx == -1 ? uploadedPath : uploadedPath.substring(0, dotIdx);
+
 		return tempFileAttribute;
 	}
 
@@ -336,6 +339,7 @@ public final class LocalStorageUtil {
 		public String name;
 		public String extension;
 		public String hash;
+		public String sha512;
 		public long size;
 	}
 
