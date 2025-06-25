@@ -68,6 +68,8 @@ public class KasApplication {
 	}
 
 	public static void main(String[] args) {
-		SpringApplication.run(KasApplication.class, args);
+		SpringApplication application = new SpringApplication(KasApplication.class);
+		application.addInitializers(new DataInitializer());
+		application.run(args);
 	}
 }

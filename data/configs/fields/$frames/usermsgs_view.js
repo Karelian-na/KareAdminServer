@@ -85,6 +85,7 @@ const specialFieldsConfig = {
 			autoUpload: false,
 			limit: 1,
 			showFileList: false,
+			accept: ".png,.jpg,.jpeg",
 		},
 	},
 
@@ -119,4 +120,9 @@ const specialFieldsConfig = {
 /**
  * @type FieldsConfig
  */
-export default Object.assign({}, users, specialFieldsConfig, __COMMON_FIELDS_CONFIGS__.recordableFieldsConfig);
+export default Object.assign(
+	{},
+	users,
+	specialFieldsConfig,
+	__COMMON_FIELDS_CONFIGS__.recordableFieldsConfig
+);

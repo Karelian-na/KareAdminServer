@@ -39,4 +39,38 @@ public class DateTimeUtil {
 			return LocalDateTime.parse(trimedDate, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 		}
 	}
+
+	public static String formatDate(LocalDate date, DateTimeFormatter formatter) {
+		if (date == null || formatter == null) {
+			return null;
+		}
+
+		return date.format(formatter);
+	}
+
+	public static String formatDateTime(LocalDateTime date, DateTimeFormatter formatter) {
+		if (date == null || formatter == null) {
+			return null;
+		}
+
+		return date.format(formatter);
+	}
+
+	public static String formatDate(LocalDate date) {
+		return formatDate(date, DateTimeFormatter.ofPattern(datePattern));
+	};
+
+	public static String formatDateTime(LocalDateTime date) {
+		return formatDateTime(date, DateTimeFormatter.ofPattern(dateTimePattern));
+	}
+
+	public static String formatDateNoSeparator(LocalDate date) {
+		final DateTimeFormatter noSeparatorFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+		return date.format(noSeparatorFormatter);
+	}
+
+	public static String formatDateTimeNoSeparator(LocalDateTime date) {
+		final DateTimeFormatter noSeparatorFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+		return date.format(noSeparatorFormatter);
+	}
 }
