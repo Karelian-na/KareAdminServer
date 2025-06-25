@@ -11,12 +11,12 @@ import java.time.ZoneOffset;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 import cn.karelian.kas.Result;
 import cn.karelian.kas.codes.CommonErrors;
@@ -37,8 +37,8 @@ public class ExceptionAdvice {
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public Result doHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
 		Throwable cause = ex.getCause();
-		if (cause instanceof InvalidFormatException) {
-			JsonMappingException jsonMappingException = (InvalidFormatException) cause;
+		if (cause instanceof JsonMappingException) {
+			JsonMappingException jsonMappingException = (JsonMappingException) cause;
 
 			String fieldName = null;
 			var exPath = jsonMappingException.getPath();
@@ -54,6 +54,13 @@ public class ExceptionAdvice {
 		Result result = new Result();
 		result.error(CommonErrors.INVALID_ARGUMENT);
 		return result;
+	}
+
+	@Order(1)
+	@ExceptionHandler(MissingServletRequestParameterException.class)
+	public Result doMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+		String paramName = ex.getParameterName();
+		return Result.fieldError(paramName, FieldErrors.EMPTY);
 	}
 
 	@Order(5)
