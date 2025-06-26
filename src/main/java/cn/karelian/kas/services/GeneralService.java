@@ -215,9 +215,10 @@ public class GeneralService implements IGeneralService {
 						hashNameHash + fileExtension);
 				if (null != storePath && !Files.exists(storePath)) {
 					try {
+						Files.createDirectories(storePath.getParent());
 						file.transferTo(storePath);
 					} catch (Exception e) {
-						continue;
+						return Result.internalError("文件存储失败!");
 					}
 				}
 			}

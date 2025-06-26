@@ -1,7 +1,6 @@
 package cn.karelian.kas.utils;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -18,6 +17,7 @@ import cn.karelian.kas.KasApplication;
 import cn.karelian.kas.codes.LocalStorageErrors;
 import cn.karelian.kas.configs.LocalStorageConfig;
 import cn.karelian.kas.exceptions.KasException;
+import cn.karelian.kas.services.GeneralService;
 import lombok.Getter;
 
 public final class LocalStorageUtil {
@@ -38,58 +38,86 @@ public final class LocalStorageUtil {
 		}
 	}
 
+	/**
+	 * get local stored file path from public path
+	 * 
+	 * @param path        the public path
+	 * @param resolvePath resolve function, empty to use local path configured in
+	 *                    {@link LocalStorageConfig#resourceCategoriesPathMap} to
+	 *                    resolve
+	 * @return the local stored path
+	 */
 	public static Path getLocalFilePath(String path, BiFunction<Path, String, Path> resolvePath) {
 		LocalStorageConfig config = KasApplication.configs.localStorageConfig;
 		if (null == path || null == config) {
 			return null;
 		}
 
-		String prefixStr = config.publicUriPrefix.toString();
-		if (!path.startsWith(prefixStr, 0)) {
+		String publicUriPrefix = config.publicUriPrefix.toString();
+		if (!path.startsWith(publicUriPrefix, 0)) {
 			return null;
 		}
 
-		String pathWithoutHost = path.substring(prefixStr.length());
-		if (pathWithoutHost.startsWith("/")) {
-			pathWithoutHost = pathWithoutHost.substring(1);
+		String pathRelativeLocalCategoryPathPrefix = path.substring(publicUriPrefix.length());
+		if (pathRelativeLocalCategoryPathPrefix.startsWith("/")) {
+			pathRelativeLocalCategoryPathPrefix = pathRelativeLocalCategoryPathPrefix.substring(1);
 		}
 
 		String category = "";
-		String lefPath = pathWithoutHost;
-		if (null != config.resourceCategoriesUriPrefixMap) {
-			for (var entry : config.resourceCategoriesUriPrefixMap.entrySet()) {
-				final String uriPrefix = entry.getValue();
-				if (pathWithoutHost.startsWith(entry.getValue())) {
-					category = entry.getKey();
-					if (pathWithoutHost.length() == uriPrefix.length()) {
-						lefPath = "";
-					} else {
-						lefPath = pathWithoutHost.substring(uriPrefix.length() + 1);
-					}
-					break;
-				}
+		String pathRelativeLocalPathPrefix = pathRelativeLocalCategoryPathPrefix;
+		while (null != config.resourceCategoriesUriPrefixMap) {
+			int slashIdx = pathRelativeLocalCategoryPathPrefix.indexOf("/");
+			if (slashIdx == -1) {
+				pathRelativeLocalPathPrefix = pathRelativeLocalCategoryPathPrefix;
+				break;
 			}
+
+			String categoryPrefix = pathRelativeLocalCategoryPathPrefix.substring(0, slashIdx);
+			category = config.resourceCategoriesUriPrefixMap.getKey(categoryPrefix);
+			if (category == null) {
+				category = "";
+				pathRelativeLocalPathPrefix = pathRelativeLocalCategoryPathPrefix;
+				break;
+			}
+
+			pathRelativeLocalPathPrefix = pathRelativeLocalCategoryPathPrefix.substring(slashIdx + 1);
+			break;
 		}
 
-		Path localPath = config.resourceCategoriesPathMap.get(category);
+		Path localPathPrefix = config.resourceCategoriesPathMap.get(category);
 
-		if (null == localPath) {
-			localPath = config.commonFilePath;
+		if (null == localPathPrefix) {
+			localPathPrefix = config.commonFilePath;
 		}
 
 		if (null == resolvePath) {
-			return localPath.resolve(lefPath);
+			return localPathPrefix.resolve(pathRelativeLocalPathPrefix);
 		}
 
-		return resolvePath.apply(localPath, lefPath);
+		return resolvePath.apply(localPathPrefix, pathRelativeLocalPathPrefix);
 	}
 
+	/**
+	 * get local stored file path from public path
+	 * 
+	 * @param path the public path
+	 * @return the local stored path
+	 */
 	public static Path getLocalFilePath(String path) {
 		return getLocalFilePath(path, null);
 	}
 
+	/**
+	 * copy temp file to specified category,
+	 * 
+	 * @param category  the file catetory will be moved to
+	 * @param fileName  the temp file name
+	 * @param deleteOld should delete the temp file
+	 * @param suffix    extra path suffix of the corresponded category path
+	 * @return the copy context, store the error code and public path
+	 */
 	private static TempFileCopyContext CopyTempFileToSpecifiedCategory(String category, String fileName,
-			boolean deleteOld) {
+			boolean deleteOld, String suffix) {
 		TempFileCopyContext context = new TempFileCopyContext();
 
 		LocalStorageConfig config = KasApplication.configs.localStorageConfig;
@@ -104,7 +132,8 @@ public final class LocalStorageUtil {
 			return context;
 		}
 
-		URI publicUrlPrefix = config.publicUriPrefix.resolve("files");
+		// Determine the local category path and public URL prefix
+		String publicUrlPrefix = null;
 		Path localCategoryPath = config.commonFilePath;
 		if (!ObjectUtils.isEmpty(category) && null != config.resourceCategoriesPathMap) {
 			Path categoryPath = config.resourceCategoriesPathMap.get(category);
@@ -113,16 +142,29 @@ public final class LocalStorageUtil {
 			}
 
 			if (null != config.resourceCategoriesUriPrefixMap) {
-				String urlPrefix = config.resourceCategoriesUriPrefixMap.get(category);
+				String urlPrefix = config.resourceCategoriesUriPrefixMap.getValue(category);
 				if (!ObjectUtils.isEmpty(urlPrefix)) {
-					publicUrlPrefix = config.publicUriPrefix.resolve(urlPrefix);
+					publicUrlPrefix = config.publicUriPrefix + urlPrefix + "/";
 				}
 			}
 		}
 
-		if (!Files.exists(localCategoryPath)) {
+		// If the public URL prefix is not set, use the default one
+		if (ObjectUtils.isEmpty(publicUrlPrefix)) {
+			publicUrlPrefix = config.publicUriPrefix + "files/";
+		}
+
+		Path localStorePath = null;
+		if (!ObjectUtils.isEmpty(suffix)) {
+			publicUrlPrefix += suffix + "/";
+			localStorePath = localCategoryPath.resolve(suffix);
+		} else {
+			localStorePath = localCategoryPath;
+		}
+
+		if (!Files.exists(localStorePath)) {
 			try {
-				Files.createDirectories(localCategoryPath);
+				Files.createDirectories(localStorePath);
 			} catch (Exception e) {
 				logger.error("Failed to create local category stroage directory, details " + e.getMessage());
 				context.errorCode = LocalStorageErrors.CREATE_CATEGORY_DIR;
@@ -136,11 +178,11 @@ public final class LocalStorageUtil {
 		String fileNameWithoutExt = LocalStorageUtil.getFileNameWithoutExtension(finalFileName);
 		String fileExtension = LocalStorageUtil.getFileExtension(fileName);
 
-		Path newPath = localCategoryPath.resolve(finalFileName);
+		Path newPath = localStorePath.resolve(finalFileName);
 		while (Files.exists(newPath)) {
 			date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 			finalFileName = fileNameWithoutExt + date + fileExtension;
-			newPath = localCategoryPath.resolve(finalFileName);
+			newPath = localStorePath.resolve(finalFileName);
 		}
 
 		try {
@@ -149,7 +191,7 @@ public final class LocalStorageUtil {
 			} else {
 				Files.copy(tempPath, newPath);
 			}
-			context.publicPath = publicUrlPrefix.toString() + "/" + finalFileName;
+			context.publicPath = publicUrlPrefix + finalFileName;
 		} catch (Exception e) {
 			context.errorCode = LocalStorageErrors.COPY;
 		}
@@ -267,46 +309,70 @@ public final class LocalStorageUtil {
 	}
 
 	/**
-	 * 原子操作将 临时文件 移动至 指定的资源分组的路径
+	 * atomic move temp files to specified category path
 	 * 
-	 * @param files    将要移动的临时文件的名称
-	 * @param category 将要移动的文件的分组，对应
-	 *                 {@code KasConfig.localStorageConfig.resourceCatogoriesPathMap}
-	 *                 的键值
+	 * @param file     the temp file name, returned by
+	 *                 {@linkplain GeneralService#upload()}
+	 * @param category the category, which is the key of
+	 *                 {@link LocalStorageConfig#resourceCategoriesPathMap}
+	 * @param suffix   the extra path suffix, empty if not specified
+	 * @return
+	 */
+	public static AtomicMoveFileHandle atomicMoveTempFiles(String[] files, String category, String suffix) {
+		AtomicMoveFileHandle handle = new AtomicMoveFileHandle(files, suffix);
+		handle.execute(category);
+		return handle;
+	}
+
+	/**
+	 * atomic move temp files to specified category path
+	 * 
+	 * @param file     the temp file name, returned by
+	 *                 {@linkplain GeneralService#upload()}
+	 * @param category the category, which is the key of
+	 *                 {@link LocalStorageConfig#resourceCategoriesPathMap}
 	 * @return
 	 */
 	public static AtomicMoveFileHandle atomicMoveTempFiles(String[] files, String category) {
-		AtomicMoveFileHandle handle = new AtomicMoveFileHandle(files);
-		handle.execute(category);
-		return handle;
+		return atomicMoveTempFiles(files, category, null);
 	}
 
 	/**
-	 * 原子操作将 临时文件 移动至 默认资源分组的路径
+	 * atomic move temp file to common category path
 	 * 
-	 * @param file     将要移动的临时文件的名称
-	 * @param category 将要移动的文件的分组，对应
-	 *                 {@code KasConfig.localStorageConfig.resourceCatogoriesPathMap}
-	 *                 的键值
+	 * @param files the temp file name, returned by
+	 *              {@linkplain GeneralService#upload()}
 	 * @return
 	 */
 	public static AtomicMoveFileHandle atomicMoveTempFiles(String[] files) {
-		return atomicMoveTempFiles(files, "");
+		return atomicMoveTempFiles(files, "", null);
 	}
 
 	/**
-	 * 原子操作将 临时文件 移动至 指定的资源分组的路径
+	 * atomic move temp file to specified category path
 	 * 
-	 * @param file     将要移动的临时文件的名称
-	 * @param category 将要移动的文件的分组，对应
-	 *                 {@code KasConfig.localStorageConfig.resourceCatogoriesPathMap}
-	 *                 的键值
+	 * @param file     the temp file name, returned by
+	 *                 {@linkplain GeneralService#upload()}
+	 * @param category the category, which is the key of
+	 *                 {@link LocalStorageConfig#resourceCategoriesPathMap}
 	 * @return
 	 */
 	public static AtomicMoveFileHandle atomicMoveTempFiles(String file, String category) {
-		AtomicMoveFileHandle handle = new AtomicMoveFileHandle(new String[] { file });
-		handle.execute(category);
-		return handle;
+		return atomicMoveTempFiles(new String[] { file }, category, null);
+	}
+
+	/**
+	 * atomic move temp file to specified category path
+	 * 
+	 * @param file     the temp file name, returned by
+	 *                 {@linkplain GeneralService#upload()}
+	 * @param category the category, which is the key of
+	 *                 {@link LocalStorageConfig#resourceCategoriesPathMap}
+	 * @param suffix   the extra path suffix, empty if not specified
+	 * @return
+	 */
+	public static AtomicMoveFileHandle atomicMoveTempFiles(String file, String category, String suffix) {
+		return atomicMoveTempFiles(new String[] { file }, category, suffix);
 	}
 
 	public static String getFileExtension(String fileName) {
@@ -353,14 +419,16 @@ public final class LocalStorageUtil {
 		@Getter
 		private LocalStorageErrors errorCode;
 
+		private String suffix;
 		private int succeededCount;
 		private String[] tempFiles;
 
-		public AtomicMoveFileHandle(String[] tempFiles) {
+		public AtomicMoveFileHandle(String[] tempFiles, String suffix) {
 			this.errorCode = LocalStorageErrors.NONE;
 			this.tempFiles = tempFiles;
 			this.succeededCount = 0;
 			this.publicPaths = new String[tempFiles.length];
+			this.suffix = suffix;
 		}
 
 		public void rollback() {
@@ -412,7 +480,7 @@ public final class LocalStorageUtil {
 
 				// 期间如果有一个文件移动失败则删除所有已经移除的文件, 并尝试将其移动至临时目录
 				TempFileCopyContext context = LocalStorageUtil.CopyTempFileToSpecifiedCategory(category, tempFileName,
-						true);
+						true, this.suffix);
 				if (context.publicPath == null) {
 					this.errorCode = context.errorCode;
 					this.success = false;

@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.util.ObjectUtils;
 
 import cn.karelian.kas.KasApplication;
+import cn.karelian.kas.utils.BiMap;
 
 public class LocalStorageConfig implements BaseConfig {
 	/* 上传文件的临时目录 */
@@ -20,7 +21,7 @@ public class LocalStorageConfig implements BaseConfig {
 	public Map<String, Path> resourceCategoriesPathMap;
 
 	/* 资源分类公网路径映射 */
-	public Map<String, String> resourceCategoriesUriPrefixMap;
+	public BiMap<String, String> resourceCategoriesUriPrefixMap;
 
 	/* 对外公网访问的 uri 前缀 */
 	public URI publicUriPrefix;
