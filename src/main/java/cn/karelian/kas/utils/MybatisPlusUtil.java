@@ -22,6 +22,8 @@ import com.baomidou.mybatisplus.core.conditions.AbstractWrapper;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfo;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.support.ColumnCache;
 import com.baomidou.mybatisplus.core.toolkit.support.LambdaMeta;
@@ -91,6 +93,24 @@ public class MybatisPlusUtil {
 			String message = "Failed to invoke `columnToStringMethod`, reason: " + ExceptionUtil.getMessage(e);
 			throw new RuntimeException(message);
 		}
+	}
+
+	public static final <T> String columnToStringWithTable(SFunction<T, ?> column, boolean onlyColumn) {
+		LambdaMeta meta = LambdaUtils.extract(column);
+		String fieldName = PropertyNamer.methodToProperty(meta.getImplMethodName());
+		Class<?> instantiatedClass = meta.getInstantiatedClass();
+		var columnMap = LambdaUtils.getColumnMap(instantiatedClass);
+		ColumnCache columnCache = (ColumnCache) columnMap.get(LambdaUtils.formatKey(fieldName));
+		if (columnCache == null) {
+			throw new RuntimeException("Failed to get column cache for field: " + fieldName);
+		}
+		String columnName = onlyColumn ? columnCache.getColumn() : columnCache.getColumnSelect();
+		TableInfo tableInfo = TableInfoHelper.getTableInfo(instantiatedClass);
+		return tableInfo.getTableName() + Constants.DOT + columnName;
+	}
+
+	public static final <T> String columnToStringWithTable(SFunction<T, ?> column) {
+		return columnToStringWithTable(column, true);
 	}
 
 	// apply non-null fields to the update wrapper

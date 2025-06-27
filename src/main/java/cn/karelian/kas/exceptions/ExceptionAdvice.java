@@ -15,6 +15,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 
@@ -89,7 +90,10 @@ public class ExceptionAdvice {
 		}
 
 		// upload exceeded exception
-		if (ex instanceof MaxUploadSizeExceededException) {
+		if (ex instanceof MultipartException) {
+			result.error(CommonErrors.INVALID_ARGUMENT, "无效的文件！");
+			return result;
+		} else if (ex instanceof MaxUploadSizeExceededException) {
 			result.error(CommonErrors.INVALID_ARGUMENT, "上传文件大小超过最大限制！");
 			return result;
 		}
