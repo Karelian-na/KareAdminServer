@@ -72,15 +72,14 @@ public final class LocalStorageUtil {
 				break;
 			}
 
+			pathRelativeLocalPathPrefix = pathRelativeLocalCategoryPathPrefix.substring(slashIdx + 1);
 			String categoryPrefix = pathRelativeLocalCategoryPathPrefix.substring(0, slashIdx);
 			category = config.resourceCategoriesUriPrefixMap.getKey(categoryPrefix);
 			if (category == null) {
 				category = "";
-				pathRelativeLocalPathPrefix = pathRelativeLocalCategoryPathPrefix;
 				break;
 			}
 
-			pathRelativeLocalPathPrefix = pathRelativeLocalCategoryPathPrefix.substring(slashIdx + 1);
 			break;
 		}
 
@@ -399,6 +398,31 @@ public final class LocalStorageUtil {
 		}
 
 		return fileName.substring(0, lastDotIndex);
+	}
+
+	/**
+	 * remove local storaged files, used when delete a record associated enclosures
+	 * 
+	 * @param publicPaths the public paths
+	 */
+	public static void removeFilesByPublicPaths(String[] publicPaths) {
+		for (String string : publicPaths) {
+			Path localPath = getLocalFilePath(string);
+			try {
+				Files.deleteIfExists(localPath);
+			} catch (IOException e) {
+				logger.error("Error occurred when delete local file: " + localPath);
+			}
+		}
+	}
+
+	/**
+	 * remove local storaged file, used when delete a record associated enclosures
+	 * 
+	 * @param publicPath
+	 */
+	public static void removeFilesByPublicPaths(String publicPath) {
+		removeFilesByPublicPaths(new String[] { publicPath });
 	}
 
 	public static class TempFileAttributes {
