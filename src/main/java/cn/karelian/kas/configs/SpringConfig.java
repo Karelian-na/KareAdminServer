@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
@@ -14,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.format.FormatterRegistry;
+import org.springframework.lang.NonNull;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -32,6 +34,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 // import org.springframework.web.cors.CorsConfiguration;
 // import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 // import org.springframework.web.filter.CorsFilter;
@@ -140,6 +143,11 @@ public class SpringConfig {
 						registry.addResourceHandler(k).addResourceLocations(location);
 					});
 				}
+			}
+
+			@Override
+			public void addArgumentResolvers(@NonNull List<HandlerMethodArgumentResolver> resolvers) {
+				resolvers.add(new RequestParamWithExtrasResolver());
 			}
 		};
 	}

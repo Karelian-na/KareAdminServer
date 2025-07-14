@@ -14,10 +14,14 @@ public class InvalidArgumentException extends KasException {
 
 	public InvalidArgumentException(String argName) {
 		super(CommonErrors.INVALID_ARGUMENT, argName);
+
+		this.result = Result.fieldError(argName, FieldErrors.INVALID);
 	}
 
 	public InvalidArgumentException(String argName, String msg) {
 		super(CommonErrors.INVALID_ARGUMENT, argName + "!" + msg);
+
+		this.result = Result.fieldError(argName, msg);
 	}
 
 	public InvalidArgumentException(String argName, FieldErrors err) {
