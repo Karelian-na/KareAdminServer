@@ -2,6 +2,7 @@ package cn.karelian.kas;
 
 import java.io.FileReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,7 +54,7 @@ public class DataInitializer implements ApplicationContextInitializer<Configurab
 		ResourceLoader resourceLoader = new DefaultResourceLoader();
 		// read kas database schema SQL file
 		String placeholderSql = null;
-		Resource resource = resourceLoader.getResource("classpath:Database.sql");
+		Resource resource = resourceLoader.getResource("classpath:/Database.sql");
 		try (InputStream inputStream = resource.getInputStream()) {
 			placeholderSql = new String(inputStream.readAllBytes(), "UTF-8");
 		} catch (Exception e) {
@@ -137,7 +138,7 @@ public class DataInitializer implements ApplicationContextInitializer<Configurab
 			return;
 		}
 
-		try (FileReader reader = new FileReader(resource.getFile(), Charset.forName("UTF-8"))) {
+		try (InputStreamReader reader = new InputStreamReader(resource.getInputStream(), Charset.forName("UTF-8"))) {
 			log.info("Executing extra SQL schema script: " + resource.getFilename());
 			scriptRunner.runScript(reader);
 			log.info("Successfully executed extra SQL schema script: " + resource.getFilename());
