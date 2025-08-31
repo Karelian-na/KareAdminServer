@@ -29,7 +29,7 @@ class DatabaseIndexParam extends IndexParam {
 }
 
 @RestController
-@RequestMapping("/databases")
+@RequestMapping("/admin/databases")
 public class DatabasesController {
 	@Autowired
 	private DatabasesService databasesService;

@@ -33,7 +33,7 @@ import cn.karelian.kas.utils.NonEmptyStrategy;
  * @since 2023-08-28
  */
 @RestController
-@RequestMapping("/roles")
+@RequestMapping("/admin/roles")
 public class RolesController {
 	@Autowired
 	private RolesService rolesService;

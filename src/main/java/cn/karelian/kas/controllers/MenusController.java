@@ -31,7 +31,7 @@ import cn.karelian.kas.views.MenusView;
  * @since 2023-11-09
  */
 @RestController
-@RequestMapping("/menus")
+@RequestMapping("/admin/menus")
 public class MenusController {
 	@Autowired
 	private MenusService menus;

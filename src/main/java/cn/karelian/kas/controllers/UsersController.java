@@ -46,20 +46,20 @@ public class UsersController {
 	private UsersService usersService;
 
 	@Authorize
-	@GetMapping("/users/index")
+	@GetMapping("/admin/users/index")
 	public Result index(@Validate @ModelAttribute IndexParam params) throws Exception {
 		return usersService.index(params);
 	}
 
 	@Authorize
-	@PutMapping("/users/edit")
+	@PutMapping("/admin/users/edit")
 	public Result edit(@Validate(nonEmptyStrategy = NonEmptyStrategy.EDIT) @RequestBody UsermsgsView params)
 			throws KasException {
 		return usersService.edit(params, false);
 	}
 
 	@Authorize
-	@PostMapping("/users/add")
+	@PostMapping("/admin/users/add")
 	public Result add(@Validate(nonEmptyStrategy = NonEmptyStrategy.ADD) @RequestBody UsermsgsView params)
 			throws TransactionFailedException {
 		return usersService.add(params);
@@ -79,19 +79,19 @@ public class UsersController {
 	}
 
 	@Authorize
-	@DeleteMapping("/users/delete")
+	@DeleteMapping("/admin/users/delete")
 	public Result delete(@RequestParam Long id) {
 		return usersService.delete(List.of(id), UserDeleteType.DELETE);
 	}
 
 	@Authorize
-	@DeleteMapping("/users/bulkdelete")
+	@DeleteMapping("/admin/users/bulkdelete")
 	public Result delete(@RequestParam List<Long> ids) {
 		return usersService.delete(ids, UserDeleteType.DELETE);
 	}
 
 	@Authorize
-	@GetMapping("/users/authorize")
+	@GetMapping("/admin/users/authorize")
 	public Result authorizeindex(@RequestParam Long id,
 			@RequestParam(required = false, defaultValue = "false") Boolean all)
 			throws NullRequestException {
@@ -99,13 +99,13 @@ public class UsersController {
 	}
 
 	@Authorize
-	@PutMapping("/users/authorize")
+	@PutMapping("/admin/users/authorize")
 	public Result authorize(@RequestBody AuthorizeParam params) throws TransactionFailedException {
 		return usersService.authorize(params);
 	}
 
 	@Authorize
-	@PutMapping("/users/reset")
+	@PutMapping("/admin/users/reset")
 	public Result reset(@RequestBody List<Long> uids) {
 		return usersService.reset(uids);
 	}
@@ -117,13 +117,13 @@ public class UsersController {
 	}
 
 	@Authorize
-	@GetMapping("/users/assign")
+	@GetMapping("/admin/users/assign")
 	public Result asignindex(@RequestParam List<Long> ids) throws NullRequestException {
 		return usersService.asignindex(ids);
 	}
 
 	@Authorize
-	@PutMapping("/users/assign")
+	@PutMapping("/admin/users/assign")
 	public Result asign(@RequestBody AssignRoleParam params) throws NullRequestException, TransactionFailedException {
 		return usersService.asign(params);
 	}
@@ -135,26 +135,26 @@ public class UsersController {
 	}
 
 	@Authorize
-	@GetMapping("/users/admin/deleted/index")
+	@GetMapping("/admin/users/deleted/index")
 	public Result deletedindex(@Validate @ModelAttribute IndexParam param)
 			throws IllegalAccessException, NullRequestException, PermissionNotFoundException {
 		return usersService.getDeletedUsers(param);
 	}
 
 	@Authorize
-	@PutMapping("/users/admin/deleted/restore")
+	@PutMapping("/admin/users/deleted/restore")
 	public Result deletedrestore(@RequestBody List<Long> ids) {
 		return usersService.restoreDeletedUsers(ids);
 	}
 
 	@Authorize
-	@DeleteMapping("/users/admin/deleted/delete")
+	@DeleteMapping("/admin/users/deleted/delete")
 	public Result deletepermanently(@RequestParam Long id) {
 		return usersService.deleteUsersPermanently(List.of(id));
 	}
 
 	@Authorize
-	@DeleteMapping("/users/admin/deleted/bulkdelete")
+	@DeleteMapping("/admin/users/deleted/bulkdelete")
 	public Result deletepermanently(@RequestParam List<Long> ids) {
 		return usersService.deleteUsersPermanently(ids);
 	}

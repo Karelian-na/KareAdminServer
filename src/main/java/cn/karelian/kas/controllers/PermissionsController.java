@@ -31,7 +31,7 @@ import cn.karelian.kas.views.PermissionsView;
  * @since 2023-08-28
  */
 @RestController
-@RequestMapping("/permissions")
+@RequestMapping("/admin/permissions")
 public class PermissionsController {
 	@Autowired
 	private PermissionsService permissionsService;

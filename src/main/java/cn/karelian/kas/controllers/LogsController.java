@@ -22,7 +22,7 @@ import cn.karelian.kas.services.LogsService;
  * @since 2023-08-28
  */
 @RestController
-@RequestMapping("/logs")
+@RequestMapping("/admin/logs")
 public class LogsController {
 	@Autowired
 	private LogsService logsService;
